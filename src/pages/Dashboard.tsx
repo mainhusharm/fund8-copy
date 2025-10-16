@@ -183,50 +183,24 @@ function OverviewSection({ user }: { user: any }) {
 
   async function fetchData() {
     try {
-      const { data: accounts } = await supabase
-        .from('mt5_accounts')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      setMt5Accounts(accounts || []);
-
-      if (accounts && accounts.length > 0 && !selectedAccountId) {
-        setSelectedAccountId(accounts[0].account_id);
-      }
-
       const { data: challenges } = await supabase
-        .from('challenges')
-        .select('*')
+        .from('user_challenges')
+        .select(`
+          *,
+          challenge_type:challenge_types(challenge_name, challenge_code)
+        `)
         .eq('user_id', user.id)
-        .eq('phase', 'pending_credentials')
-        .order('created_at', { ascending: false });
+        .order('purchase_date', { ascending: false });
 
       setPendingChallenges(challenges || []);
+      setMt5Accounts([]);
 
-      if (accounts && accounts.length > 0) {
-        setSelectedAccountId(accounts[0].account_id);
-
-        const totalBalance = accounts.reduce((sum, acc) => sum + parseFloat(acc.current_balance || 0), 0);
-        const totalProfit = accounts.reduce(
-          (sum, acc) => sum + (parseFloat(acc.current_balance || 0) - parseFloat(acc.initial_balance || 0)),
-          0
-        );
-
-        setStats({
-          balance: totalBalance,
-          profit: totalProfit,
-          accounts: accounts.length,
-          pending: challenges?.length || 0,
-        });
-      } else {
-        setStats({
-          balance: 0,
-          profit: 0,
-          accounts: 0,
-          pending: challenges?.length || 0,
-        });
-      }
+      setStats({
+        balance: 0,
+        profit: 0,
+        accounts: 0,
+        pending: challenges?.length || 0,
+      });
     } catch (error) {
       console.error('Error fetching data:', error);
     }
