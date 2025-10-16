@@ -15,6 +15,10 @@ import AdminMT5 from './pages/AdminMT5';
 import AdminChallenges from './pages/AdminChallenges';
 import CryptoPayment from './pages/CryptoPayment';
 import ChallengeTypes from './pages/ChallengeTypes';
+import Leaderboard from './pages/Leaderboard';
+import Notifications from './pages/Notifications';
+import Certificate from './pages/Certificate';
+import Affiliate from './pages/Affiliate';
 
 function App() {
   return (
@@ -36,6 +40,10 @@ function App() {
         <Route path="/admin/mt5" element={<AdminMT5 />} />
         <Route path="/admin/challenges" element={<AdminChallenges />} />
         <Route path="/payment" element={<CryptoPayment />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/certificate/:accountId" element={<Certificate />} />
+        <Route path="/affiliate" element={<Affiliate />} />
       </Routes>
     </BrowserRouter>
   );
