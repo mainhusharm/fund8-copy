@@ -503,7 +503,7 @@ function OverviewSection({ user }: { user: any }) {
             Your MT5 account will be created after purchasing a challenge. Contact support if you need assistance.
           </p>
           <button
-            onClick={() => window.location.href = '/pricing'}
+            onClick={() => navigate('/challenge-types')}
             className="px-6 py-3 bg-gradient-to-r from-neon-green to-electric-blue rounded-lg font-semibold hover:scale-105 transition-transform"
           >
             Purchase Challenge

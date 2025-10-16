@@ -27,7 +27,7 @@ export default function Navbar() {
 
           <div className="hidden md:flex items-center space-x-8">
             <a href="/#how-it-works" className="hover:text-electric-blue transition-colors">How It Works</a>
-            <a href="/pricing" className="hover:text-electric-blue transition-colors">Pricing</a>
+            <a href="/challenge-types" className="hover:text-electric-blue transition-colors">Challenges</a>
             <a href="/faq" className="hover:text-electric-blue transition-colors">FAQ</a>
             <a href="/about" className="hover:text-electric-blue transition-colors">About</a>
             <a href="/contact" className="hover:text-electric-blue transition-colors">Contact</a>
@@ -56,7 +56,7 @@ export default function Navbar() {
         <div className="md:hidden glass-card border-t border-white/10">
           <div className="px-4 pt-2 pb-4 space-y-3">
             <a href="/#how-it-works" className="block py-2 hover:text-electric-blue transition-colors">How It Works</a>
-            <a href="/pricing" className="block py-2 hover:text-electric-blue transition-colors">Pricing</a>
+            <a href="/challenge-types" className="block py-2 hover:text-electric-blue transition-colors">Challenges</a>
             <a href="/faq" className="block py-2 hover:text-electric-blue transition-colors">FAQ</a>
             <a href="/about" className="block py-2 hover:text-electric-blue transition-colors">About</a>
             <a href="/contact" className="block py-2 hover:text-electric-blue transition-colors">Contact</a>

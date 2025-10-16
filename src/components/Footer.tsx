@@ -30,7 +30,7 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Resources</h4>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li><a href="/pricing" className="hover:text-electric-blue transition-colors">Pricing</a></li>
+              <li><a href="/challenge-types" className="hover:text-electric-blue transition-colors">Challenges</a></li>
               <li><a href="/#rules" className="hover:text-electric-blue transition-colors">Trading Rules</a></li>
               <li><a href="/dashboard" className="hover:text-electric-blue transition-colors">Dashboard</a></li>
               <li><a href="/contact" className="hover:text-electric-blue transition-colors">Support</a></li>

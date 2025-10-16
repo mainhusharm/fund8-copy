@@ -69,7 +69,7 @@ export default function PricingCard({
         ))}
       </ul>
 
-      <a href="/pricing" className="w-full btn-gradient flex items-center justify-center space-x-2 group">
+      <a href="/challenge-types" className="w-full btn-gradient flex items-center justify-center space-x-2 group">
         <span>Get Started</span>
         <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
       </a>
