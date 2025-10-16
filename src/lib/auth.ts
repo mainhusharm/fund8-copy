@@ -1,4 +1,5 @@
 import { supabase } from './db';
+import { sendWelcomeEmail } from '../services/emailService';
 
 export async function getCurrentUser() {
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -36,6 +37,13 @@ export async function signUp(email: string, password: string, firstName: string,
 
   if (profileError) {
     return { success: false, error: 'Failed to create user profile' };
+  }
+
+  // Send welcome email
+  try {
+    await sendWelcomeEmail(email, firstName);
+  } catch (error) {
+    console.error('Failed to send welcome email:', error);
   }
 
   return { success: true, user: data.user };

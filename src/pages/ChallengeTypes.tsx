@@ -3,6 +3,7 @@ import { Zap, Trophy, CreditCard, Flame, TrendingUp, Crown, CheckCircle } from '
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import GradientText from '../components/ui/GradientText';
+import { supabase } from '../lib/db';
 
 interface ChallengeType {
   id: string;
@@ -63,20 +64,36 @@ export default function ChallengeTypes() {
 
   const fetchChallenges = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/challenges');
-      const result = await response.json();
+      if (!supabase) {
+        console.error('Supabase client not initialized');
+        setLoading(false);
+        return;
+      }
 
-      if (result.success) {
-        setChallenges(result.data);
+      const { data: challengeData, error: challengeError } = await supabase
+        .from('challenge_types')
+        .select('*')
+        .eq('is_active', true)
+        .order('recommended', { ascending: false });
 
-        for (const challenge of result.data) {
-          const pricingResponse = await fetch(`http://localhost:5000/api/challenges/${challenge.challenge_code}/pricing`);
-          const pricingResult = await pricingResponse.json();
+      if (challengeError) throw challengeError;
 
-          if (pricingResult.success) {
+      if (challengeData) {
+        setChallenges(challengeData);
+
+        for (const challenge of challengeData) {
+          const { data: pricingData, error: pricingError } = await supabase
+            .from('challenge_pricing')
+            .select('*')
+            .eq('challenge_type_id', challenge.id)
+            .order('account_size', { ascending: true });
+
+          if (pricingError) throw pricingError;
+
+          if (pricingData) {
             setPricingTiers(prev => ({
               ...prev,
-              [challenge.challenge_code]: pricingResult.data
+              [challenge.challenge_code]: pricingData
             }));
           }
         }
