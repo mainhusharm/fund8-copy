@@ -1,295 +1,275 @@
 import { useEffect, useState } from 'react';
-import { Check, X, TrendingUp, Zap, Scale, Award, Clock } from 'lucide-react';
+import { Zap, Trophy, CreditCard, Flame, TrendingUp, Crown, CheckCircle } from 'lucide-react';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import GradientText from '../components/ui/GradientText';
-import { supabase } from '../lib/db';
 
 interface ChallengeType {
-  type_name: string;
-  display_name: string;
+  id: string;
+  challenge_code: string;
+  challenge_name: string;
   description: string;
-  marketing_tagline: string;
-  number_of_phases: number;
-  phase1_profit_target: number;
-  phase1_max_drawdown: number;
-  phase1_daily_loss_limit: number;
-  phase1_min_trading_days: number;
-  phase1_time_limit_days: number;
-  phase2_profit_target: number;
-  phase2_max_drawdown: number;
-  phase2_daily_loss_limit: number;
-  phase2_min_trading_days: number;
-  phase2_time_limit_days: number;
-  requires_consistency_score: boolean;
-  min_consistency_score: number;
-  profit_split_trader_percent: number;
-  challenge_fee: number;
+  is_active: boolean;
+  recommended: boolean;
 }
 
-const iconMap: Record<string, typeof TrendingUp> = {
-  standard: TrendingUp,
-  rapid: Zap,
-  scaling: Scale,
-  professional: Award,
-  swing: Clock
+interface PricingTier {
+  id: string;
+  account_size: number;
+  regular_price: number;
+  discount_price: number;
+  platform_cost: number;
+  phase_1_price?: number;
+  phase_2_price?: number;
+  profit_target_pct?: number;
+  profit_target_amount?: number;
+  phase_1_target_pct?: number;
+  phase_2_target_pct?: number;
+  phase_1_target_amount?: number;
+  phase_2_target_amount?: number;
+  daily_dd_pct: number;
+  max_dd_pct: number;
+  min_trading_days: number;
+  time_limit_days?: number;
+}
+
+const iconMap: Record<string, any> = {
+  RAPID_FIRE: Zap,
+  CLASSIC_2STEP: Trophy,
+  PAYG_2STEP: CreditCard,
+  AGGRESSIVE_2STEP: Flame,
+  SWING_PRO: TrendingUp,
+  ELITE_ROYAL: Crown
+};
+
+const colorMap: Record<string, string> = {
+  RAPID_FIRE: 'from-orange-500 to-red-500',
+  CLASSIC_2STEP: 'from-blue-500 to-indigo-500',
+  PAYG_2STEP: 'from-green-500 to-emerald-500',
+  AGGRESSIVE_2STEP: 'from-red-500 to-pink-500',
+  SWING_PRO: 'from-purple-500 to-violet-500',
+  ELITE_ROYAL: 'from-yellow-500 to-amber-500'
 };
 
 export default function ChallengeTypes() {
-  const [challengeTypes, setChallengeTypes] = useState<ChallengeType[]>([]);
+  const [challenges, setChallenges] = useState<ChallengeType[]>([]);
+  const [selectedChallenge, setSelectedChallenge] = useState<string | null>(null);
+  const [pricingTiers, setPricingTiers] = useState<Record<string, PricingTier[]>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchChallengeTypes() {
-      try {
-        const { data, error } = await supabase
-          .from('challenge_types')
-          .select('*')
-          .eq('is_active', true)
-          .order('sort_order');
-
-        if (error) throw error;
-        setChallengeTypes(data || []);
-      } catch (error) {
-        console.error('Error fetching challenge types:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchChallengeTypes();
+    fetchChallenges();
   }, []);
+
+  const fetchChallenges = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/challenges');
+      const result = await response.json();
+
+      if (result.success) {
+        setChallenges(result.data);
+
+        for (const challenge of result.data) {
+          const pricingResponse = await fetch(`http://localhost:5000/api/challenges/${challenge.challenge_code}/pricing`);
+          const pricingResult = await pricingResponse.json();
+
+          if (pricingResult.success) {
+            setPricingTiers(prev => ({
+              ...prev,
+              [challenge.challenge_code]: pricingResult.data
+            }));
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching challenges:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen pt-20 px-4">
-        <div className="max-w-7xl mx-auto text-center">
-          <p className="text-white text-xl">Loading challenge types...</p>
+      <div className="min-h-screen bg-deep-space">
+        <Navbar />
+        <div className="max-w-7xl mx-auto px-4 py-24 text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-electric-blue"></div>
         </div>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pt-20 px-4 pb-20">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-deep-space">
+      <Navbar />
+
+      <div className="max-w-7xl mx-auto px-4 py-24">
         <div className="text-center mb-16">
           <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            <GradientText>Challenge Types</GradientText>
+            <GradientText>Choose Your Challenge</GradientText>
           </h1>
-          <p className="text-xl text-white/80 max-w-3xl mx-auto">
-            Choose the evaluation program that matches your trading style and goals.
-            Each challenge is designed for specific trading approaches.
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            6 unique evaluation programs designed for different trading styles. All with 50% discount and instant access.
           </p>
         </div>
 
-        <div className="grid gap-8">
-          {challengeTypes.map((challenge) => {
-            const Icon = iconMap[challenge.type_name] || TrendingUp;
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          {challenges.map((challenge) => {
+            const Icon = iconMap[challenge.challenge_code] || Trophy;
+            const gradient = colorMap[challenge.challenge_code] || 'from-blue-500 to-purple-500';
 
             return (
-              <div key={challenge.type_name} className="glass-card p-8">
-                <div className="flex items-start gap-6 mb-6">
-                  <div className="p-4 bg-gradient-to-br from-electric-blue to-neon-purple rounded-2xl">
-                    <Icon size={32} className="text-white" />
+              <div
+                key={challenge.id}
+                className="glass-card p-6 cursor-pointer hover:border-electric-blue/50 transition-all relative"
+                onClick={() => setSelectedChallenge(
+                  selectedChallenge === challenge.challenge_code ? null : challenge.challenge_code
+                )}
+              >
+                {challenge.recommended && (
+                  <div className="absolute -top-3 -right-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg animate-pulse">
+                    RECOMMENDED
                   </div>
-                  <div className="flex-1">
-                    <h2 className="text-3xl font-bold mb-2">
-                      <GradientText>{challenge.display_name}</GradientText>
-                    </h2>
-                    <p className="text-lg text-white/70 mb-2">{challenge.marketing_tagline}</p>
-                    <p className="text-white/60">{challenge.description}</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm text-white/60 mb-1">Starting at</div>
-                    <div className="text-3xl font-bold text-neon-green">
-                      ${challenge.challenge_fee.toFixed(0)}
-                    </div>
-                  </div>
+                )}
+
+                <div className={`w-16 h-16 bg-gradient-to-br ${gradient} rounded-2xl flex items-center justify-center mb-4`}>
+                  <Icon size={32} className="text-white" />
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6 mb-6">
-                  <div className="bg-white/5 rounded-xl p-6">
-                    <h3 className="text-xl font-bold mb-4 text-electric-blue">
-                      Phase 1 Requirements
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-white/70">Profit Target:</span>
-                        <span className="font-bold text-neon-green">
-                          {challenge.phase1_profit_target}%
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-white/70">Max Drawdown:</span>
-                        <span className="font-bold text-red-400">
-                          {challenge.phase1_max_drawdown}%
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-white/70">Daily Loss Limit:</span>
-                        <span className="font-bold text-red-400">
-                          {challenge.phase1_daily_loss_limit}%
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-white/70">Min Trading Days:</span>
-                        <span className="font-bold">{challenge.phase1_min_trading_days} days</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-white/70">Time Limit:</span>
-                        <span className="font-bold">
-                          {challenge.phase1_time_limit_days} days
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                <h3 className="text-2xl font-bold mb-2">{challenge.challenge_name}</h3>
+                <p className="text-gray-400 text-sm mb-4">{challenge.description}</p>
 
-                  {challenge.number_of_phases === 2 && (
-                    <div className="bg-white/5 rounded-xl p-6">
-                      <h3 className="text-xl font-bold mb-4 text-neon-purple">
-                        Phase 2 Requirements
-                      </h3>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-white/70">Profit Target:</span>
-                          <span className="font-bold text-neon-green">
-                            {challenge.phase2_profit_target}%
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-white/70">Max Drawdown:</span>
-                          <span className="font-bold text-red-400">
-                            {challenge.phase2_max_drawdown || challenge.phase1_max_drawdown}%
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-white/70">Daily Loss Limit:</span>
-                          <span className="font-bold text-red-400">
-                            {challenge.phase2_daily_loss_limit || challenge.phase1_daily_loss_limit}%
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-white/70">Min Trading Days:</span>
-                          <span className="font-bold">
-                            {challenge.phase2_min_trading_days} days
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-white/70">Time Limit:</span>
-                          <span className="font-bold">
-                            {challenge.phase2_time_limit_days} days
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="bg-gradient-to-r from-neon-green/20 to-electric-blue/20 rounded-xl p-6 mb-6">
-                  <h3 className="text-xl font-bold mb-4">Key Features</h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-3">
-                      <Check size={20} className="text-neon-green" />
-                      <span>{challenge.profit_split_trader_percent}% Profit Split</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Check size={20} className="text-neon-green" />
-                      <span>{challenge.number_of_phases} Phase Evaluation</span>
-                    </div>
-                    {challenge.requires_consistency_score && (
-                      <div className="flex items-center gap-3">
-                        <Check size={20} className="text-neon-green" />
-                        <span>Consistency Score: {challenge.min_consistency_score}%</span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-3">
-                      <Check size={20} className="text-neon-green" />
-                      <span>No Weekend Holding Rules</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Check size={20} className="text-neon-green" />
-                      <span>Trade News Events</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Check size={20} className="text-neon-green" />
-                      <span>Expert Advisors Allowed</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white/5 rounded-xl p-6">
-                  <h3 className="text-xl font-bold mb-4">Trading Rules</h3>
-                  <div className="space-y-3 text-white/80">
-                    <div className="flex items-start gap-3">
-                      <Check size={20} className="text-neon-green flex-shrink-0 mt-1" />
-                      <p>
-                        <strong>Maximum Drawdown:</strong> Total account loss cannot exceed {challenge.phase1_max_drawdown}% from the initial balance or highest balance reached.
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <Check size={20} className="text-neon-green flex-shrink-0 mt-1" />
-                      <p>
-                        <strong>Daily Loss Limit:</strong> You cannot lose more than {challenge.phase1_daily_loss_limit}% of your starting balance in a single trading day (00:00-23:59 server time).
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <Check size={20} className="text-neon-green flex-shrink-0 mt-1" />
-                      <p>
-                        <strong>Minimum Trading Days:</strong> You must trade for at least {challenge.phase1_min_trading_days} days before requesting payout. A trading day is any day with at least one position opened.
-                      </p>
-                    </div>
-                    {challenge.requires_consistency_score && (
-                      <div className="flex items-start gap-3">
-                        <Check size={20} className="text-neon-green flex-shrink-0 mt-1" />
-                        <p>
-                          <strong>Consistency:</strong> Your best trading day cannot exceed {challenge.min_consistency_score}% of your total net profit to ensure consistent performance.
-                        </p>
-                      </div>
-                    )}
-                    <div className="flex items-start gap-3">
-                      <X size={20} className="text-red-400 flex-shrink-0 mt-1" />
-                      <p>
-                        <strong>Prohibited:</strong> Copy trading from external sources, hedging between accounts, arbitrage strategies, or high-frequency trading (HFT) are not allowed.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6 flex justify-end">
-                  <button className="px-8 py-3 bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg font-semibold hover:scale-105 transition-transform">
-                    Choose This Challenge
-                  </button>
-                </div>
+                <button className="w-full btn-gradient">
+                  {selectedChallenge === challenge.challenge_code ? 'Hide Details' : 'View Pricing'}
+                </button>
               </div>
             );
           })}
         </div>
 
-        <div className="mt-16 glass-card p-8">
-          <h2 className="text-3xl font-bold mb-6">
-            <GradientText>Need Help Choosing?</GradientText>
-          </h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            <div>
-              <h3 className="text-xl font-bold mb-3 text-electric-blue">New Traders</h3>
-              <p className="text-white/70 mb-3">
-                Start with the <strong>Standard Challenge</strong>. It offers balanced targets and enough time to prove your skills.
-              </p>
+        {selectedChallenge && pricingTiers[selectedChallenge] && (
+          <div className="glass-card p-8 mb-12">
+            <h2 className="text-3xl font-bold mb-6">
+              {challenges.find(c => c.challenge_code === selectedChallenge)?.challenge_name} - Pricing
+            </h2>
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className="text-left py-4 px-4">Account Size</th>
+                    <th className="text-left py-4 px-4">Regular Price</th>
+                    <th className="text-left py-4 px-4">50% Discount</th>
+                    {selectedChallenge === 'PAYG_2STEP' && (
+                      <>
+                        <th className="text-left py-4 px-4">Phase 1</th>
+                        <th className="text-left py-4 px-4">Phase 2</th>
+                      </>
+                    )}
+                    <th className="text-left py-4 px-4">Profit Target</th>
+                    <th className="text-left py-4 px-4">Rules</th>
+                    <th className="text-left py-4 px-4"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pricingTiers[selectedChallenge].map((tier) => (
+                    <tr key={tier.id} className="border-b border-white/5 hover:bg-white/5">
+                      <td className="py-4 px-4 font-bold">${tier.account_size.toLocaleString()}</td>
+                      <td className="py-4 px-4 text-gray-400 line-through">${tier.regular_price}</td>
+                      <td className="py-4 px-4 text-green-400 font-bold text-xl">${tier.discount_price}</td>
+
+                      {selectedChallenge === 'PAYG_2STEP' && (
+                        <>
+                          <td className="py-4 px-4 text-sm">
+                            ${tier.phase_1_price ? (tier.phase_1_price / 2).toFixed(0) : 0}
+                          </td>
+                          <td className="py-4 px-4 text-sm">
+                            ${tier.phase_2_price ? (tier.phase_2_price / 2).toFixed(0) : 0}
+                          </td>
+                        </>
+                      )}
+
+                      <td className="py-4 px-4">
+                        {tier.phase_1_target_pct ? (
+                          <div className="text-sm">
+                            <div>Phase 1: {tier.phase_1_target_pct}% (${tier.phase_1_target_amount?.toLocaleString()})</div>
+                            <div>Phase 2: {tier.phase_2_target_pct}% (${tier.phase_2_target_amount?.toLocaleString()})</div>
+                          </div>
+                        ) : (
+                          <div className="text-sm">
+                            {tier.profit_target_pct}% (${tier.profit_target_amount?.toLocaleString()})
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="py-4 px-4 text-sm">
+                        <div>Daily DD: {tier.daily_dd_pct}%</div>
+                        <div>Max DD: {tier.max_dd_pct}%</div>
+                        <div>Min Days: {tier.min_trading_days}</div>
+                        {tier.time_limit_days && <div>Time Limit: {tier.time_limit_days} days</div>}
+                      </td>
+
+                      <td className="py-4 px-4">
+                        <button className="px-4 py-2 bg-electric-blue hover:bg-electric-blue/80 rounded-lg font-semibold transition">
+                          Purchase
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <div>
-              <h3 className="text-xl font-bold mb-3 text-neon-purple">Experienced Traders</h3>
-              <p className="text-white/70 mb-3">
-                Try the <strong>Rapid Challenge</strong> for quick funding or <strong>Professional Challenge</strong> for higher profit splits.
-              </p>
+
+            <div className="mt-8 p-6 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+              <h3 className="text-xl font-bold mb-4">Challenge Rules Summary</h3>
+              <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                  <span>All trading strategies allowed (EAs, news trading, scalping)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                  <span>Minimum 2 trades per day required</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                  <span>Must trade at least 2 different instruments</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                  <span>Consistency requirements apply (no single-day profits)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                  <span>Real-time drawdown monitoring</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                  <span>80-90% profit split on funded accounts</span>
+                </div>
+              </div>
             </div>
-            <div>
-              <h3 className="text-xl font-bold mb-3 text-neon-green">Position Traders</h3>
-              <p className="text-white/70 mb-3">
-                The <strong>Swing Trader Challenge</strong> is perfect with its 60-day timeframe and wider stop losses.
-              </p>
-            </div>
+          </div>
+        )}
+
+        <div className="glass-card p-8 text-center">
+          <h2 className="text-3xl font-bold mb-4">Need Help Choosing?</h2>
+          <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
+            Not sure which challenge is right for you? Check out our comparison guide or contact our support team.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="/faq" className="px-8 py-4 bg-white/10 hover:bg-white/20 rounded-lg font-semibold transition">
+              View FAQ
+            </a>
+            <a href="/support" className="px-8 py-4 btn-gradient">
+              Contact Support
+            </a>
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }

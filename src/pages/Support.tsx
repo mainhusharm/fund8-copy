@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { MessageSquare, Plus, Send, Clock, CheckCircle, XCircle } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { api } from '../lib/api';
 
 export default function Support() {
   const [tickets, setTickets] = useState<any[]>([]);
