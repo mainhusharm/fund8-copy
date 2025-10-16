@@ -21,6 +21,7 @@ import Certificate from './pages/Certificate';
 import Affiliate from './pages/Affiliate';
 import Support from './pages/Support';
 import TestEmails from './pages/TestEmails';
+import SystemTest from './pages/SystemTest';
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
         <Route path="/affiliate" element={<Affiliate />} />
         <Route path="/support" element={<Support />} />
         <Route path="/test-emails" element={<TestEmails />} />
+        <Route path="/system-test" element={<SystemTest />} />
       </Routes>
     </BrowserRouter>
   );

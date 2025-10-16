@@ -6,87 +6,76 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
 };
 
-interface EmailRequest {
-  to: string;
-  subject: string;
-  html: string;
-  text: string;
-  type?: string;
-}
-
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: corsHeaders,
-    });
+    return new Response(null, { status: 200, headers: corsHeaders });
   }
 
   try {
-    const { to, subject, html, text, type }: EmailRequest = await req.json();
+    const { to, subject, html, text, type } = await req.json();
 
-    console.log(`Sending ${type || 'email'} to ${to}: ${subject}`);
-
-    // Using Gmail SMTP via fetch to send email
-    // For production, you'd integrate with Resend, SendGrid, or AWS SES
-    // For now, we'll log the email and return success
+    // Use Resend for actual email delivery
+    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || 're_demo_key';
     
-    const emailLog = {
-      timestamp: new Date().toISOString(),
-      to,
-      subject,
-      type: type || 'general',
-      preview: text.substring(0, 200)
+    const emailPayload = {
+      from: 'Fund8r <noreply@fund8r.com>',
+      to: [to],
+      subject: subject,
+      html: html,
+      text: text
     };
 
-    console.log('Email Details:', JSON.stringify(emailLog, null, 2));
+    // Send via Resend API
+    const resendResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(emailPayload)
+    });
 
-    // In production, you would call an email service here:
-    // const response = await fetch('https://api.resend.com/emails', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Authorization': `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
-    //     'Content-Type': 'application/json'
-    //   },
-    //   body: JSON.stringify({
-    //     from: 'Fund8r <noreply@fund8r.com>',
-    //     to: [to],
-    //     subject,
-    //     html,
-    //     text
-    //   })
-    // });
+    const resendData = await resendResponse.json();
+
+    if (!resendResponse.ok) {
+      console.error('Resend API error:', resendData);
+      // Fallback: Log email details for manual review
+      console.log('Email that failed to send:', JSON.stringify({
+        to, subject, type,
+        preview: text.substring(0, 200)
+      }, null, 2));
+      
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Email service unavailable',
+          details: resendData
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Email sent successfully:', {
+      emailId: resendData.id,
+      to,
+      subject,
+      type
+    });
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Email sent successfully',
-        emailId: `email-${Date.now()}`,
+        emailId: resendData.id,
         recipient: to,
         subject: subject
       }),
-      {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-  } catch (error) {
-    console.error('Error sending email:', error);
+  } catch (error: any) {
+    console.error('Email function error:', error);
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message
-      }),
-      {
-        status: 500,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      }
+      JSON.stringify({ success: false, error: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
