@@ -19,6 +19,7 @@ import Leaderboard from './pages/Leaderboard';
 import Notifications from './pages/Notifications';
 import Certificate from './pages/Certificate';
 import Affiliate from './pages/Affiliate';
+import Support from './pages/Support';
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/certificate/:accountId" element={<Certificate />} />
         <Route path="/affiliate" element={<Affiliate />} />
+        <Route path="/support" element={<Support />} />
       </Routes>
     </BrowserRouter>
   );

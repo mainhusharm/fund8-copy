@@ -9,6 +9,7 @@ import leaderboardRoutes from './routes/leaderboard.js';
 import affiliatesRoutes from './routes/affiliates.js';
 import certificatesRoutes from './routes/certificates.js';
 import notificationsRoutes from './routes/notifications.js';
+import supportRoutes from './routes/support.js';
 
 import monitoringService from './services/monitoringService.js';
 
@@ -37,6 +38,7 @@ app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/affiliates', affiliatesRoutes);
 app.use('/api/certificates', certificatesRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/support', supportRoutes);
 
 app.get('/health', (req, res) => {
   res.json({
