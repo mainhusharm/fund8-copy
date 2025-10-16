@@ -20,14 +20,21 @@ export async function sendEmail(data: EmailData): Promise<boolean> {
     });
 
     if (error) {
-      console.error('Error sending email:', error);
+      console.error('Error invoking email function:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
       return false;
     }
 
-    console.log('Email sent:', result);
-    return true;
-  } catch (error) {
-    console.error('Email service error:', error);
+    console.log('Email function response:', result);
+
+    if (result && result.success) {
+      return true;
+    } else {
+      console.error('Email failed:', result?.error || 'Unknown error');
+      return false;
+    }
+  } catch (error: any) {
+    console.error('Email service error:', error.message || error);
     return false;
   }
 }

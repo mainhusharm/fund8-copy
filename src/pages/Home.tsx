@@ -108,75 +108,67 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="pricing" className="py-20 px-4">
+        <section id="challenges" className="py-20 px-4">
           <div className="max-w-7xl mx-auto text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4">
-              Simple, Transparent <GradientText>Pricing</GradientText>
+              Choose Your <GradientText>Challenge Type</GradientText>
             </h2>
-            <p className="text-xl text-gray-400">6 account sizes × 5 challenge types = 30 combinations. Starting from just $39.</p>
+            <p className="text-xl text-gray-400">6 unique challenge types designed for different trading styles. Find your perfect match.</p>
           </div>
 
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <PricingCard
-              size="$5,000"
-              price="$49"
-              badge="MOST AFFORDABLE"
-              profitSplit="80%"
-              phase1Target="$400"
-              phase2Target="$250"
-            />
-            <PricingCard
-              size="$10,000"
-              price="$79"
-              badge="MOST POPULAR"
-              profitSplit="80%"
-              phase1Target="$800"
-              phase2Target="$500"
-              highlighted={true}
-            />
-            <PricingCard
-              size="$25,000"
-              price="$129"
-              profitSplit="85%"
-              phase1Target="$2,000"
-              phase2Target="$1,250"
-            />
-            <PricingCard
-              size="$50,000"
-              price="$199"
-              badge="BEST VALUE"
-              profitSplit="85%"
-              phase1Target="$4,000"
-              phase2Target="$2,500"
-            />
-            <PricingCard
-              size="$100,000"
-              price="$349"
-              profitSplit="90%"
-              phase1Target="$8,000"
-              phase2Target="$5,000"
-            />
-            <PricingCard
-              size="$200,000"
-              price="$599"
-              badge="HIGHEST SPLIT"
-              profitSplit="90%"
-              phase1Target="$16,000"
-              phase2Target="$10,000"
-            />
+            <div className="glass-card p-8 hover:border-orange-500/50 transition-all cursor-pointer group" onClick={() => window.location.href = '/challenge-types'}>
+              <div className="text-4xl mb-4">⚡</div>
+              <h3 className="text-2xl font-bold mb-2">Rapid Fire</h3>
+              <p className="text-gray-400 mb-4">1-Step instant funding for aggressive traders</p>
+              <p className="text-sm text-orange-400">Starting from $39</p>
+            </div>
+
+            <div className="glass-card p-8 border-2 border-blue-500/50 hover:border-blue-500 transition-all cursor-pointer group relative" onClick={() => window.location.href = '/challenge-types'}>
+              <div className="absolute top-4 right-4 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded">RECOMMENDED</div>
+              <div className="text-4xl mb-4">🏆</div>
+              <h3 className="text-2xl font-bold mb-2">Classic 2-Step</h3>
+              <p className="text-gray-400 mb-4">Industry standard evaluation</p>
+              <p className="text-sm text-blue-400">Starting from $34</p>
+            </div>
+
+            <div className="glass-card p-8 hover:border-green-500/50 transition-all cursor-pointer group" onClick={() => window.location.href = '/challenge-types'}>
+              <div className="text-4xl mb-4">💳</div>
+              <h3 className="text-2xl font-bold mb-2">Pay-As-You-Go</h3>
+              <p className="text-gray-400 mb-4">Split payment, pay Phase 2 after passing Phase 1</p>
+              <p className="text-sm text-green-400">Phase 1 from $50</p>
+            </div>
+
+            <div className="glass-card p-8 hover:border-red-500/50 transition-all cursor-pointer group" onClick={() => window.location.href = '/challenge-types'}>
+              <div className="text-4xl mb-4">🔥</div>
+              <h3 className="text-2xl font-bold mb-2">Aggressive 2-Step</h3>
+              <p className="text-gray-400 mb-4">High risk, high reward for scalpers</p>
+              <p className="text-sm text-red-400">Starting from $44</p>
+            </div>
+
+            <div className="glass-card p-8 hover:border-purple-500/50 transition-all cursor-pointer group" onClick={() => window.location.href = '/challenge-types'}>
+              <div className="text-4xl mb-4">📈</div>
+              <h3 className="text-2xl font-bold mb-2">Swing Trader Pro</h3>
+              <p className="text-gray-400 mb-4">Weekend holds allowed for position traders</p>
+              <p className="text-sm text-purple-400">Starting from $79</p>
+            </div>
+
+            <div className="glass-card p-8 hover:border-yellow-500/50 transition-all cursor-pointer group" onClick={() => window.location.href = '/challenge-types'}>
+              <div className="text-4xl mb-4">👑</div>
+              <h3 className="text-2xl font-bold mb-2">Elite Royal</h3>
+              <p className="text-gray-400 mb-4">High stakes $300K-$2M with 90/10 split</p>
+              <p className="text-sm text-yellow-400">Starting from $849</p>
+            </div>
           </div>
 
           <div className="text-center mt-12">
             <a
-              href="/pricing"
-              className="inline-flex items-center space-x-2 px-8 py-4 glass-card rounded-lg font-semibold text-lg hover:border-electric-blue/50 transition-all"
+              href="/challenge-types"
+              className="inline-flex items-center space-x-2 px-8 py-4 btn-gradient font-semibold text-lg"
             >
-              <span>View All 30 Options</span>
+              <span>View All Challenge Types</span>
               <ArrowRight size={20} />
             </a>
-            <p className="text-sm text-gray-500 mt-4">
-              Choose from Standard, Rapid, Scaling, Professional, or Swing challenges
-            </p>
           </div>
         </section>
 

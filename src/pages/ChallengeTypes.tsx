@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Zap, Trophy, CreditCard, Flame, TrendingUp, Crown, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Zap, Trophy, CreditCard, Flame, TrendingUp, Crown, CheckCircle, X, ArrowRight, DollarSign } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import GradientText from '../components/ui/GradientText';
@@ -43,20 +44,22 @@ const iconMap: Record<string, any> = {
   ELITE_ROYAL: Crown
 };
 
-const colorMap: Record<string, string> = {
-  RAPID_FIRE: 'from-orange-500 to-red-500',
-  CLASSIC_2STEP: 'from-blue-500 to-indigo-500',
-  PAYG_2STEP: 'from-green-500 to-emerald-500',
-  AGGRESSIVE_2STEP: 'from-red-500 to-pink-500',
-  SWING_PRO: 'from-purple-500 to-violet-500',
-  ELITE_ROYAL: 'from-yellow-500 to-amber-500'
+const colorMap: Record<string, { border: string; bg: string; accent: string }> = {
+  RAPID_FIRE: { border: 'border-orange-500/50', bg: 'bg-orange-500/10', accent: 'text-orange-400' },
+  CLASSIC_2STEP: { border: 'border-blue-500/50', bg: 'bg-blue-500/10', accent: 'text-blue-400' },
+  PAYG_2STEP: { border: 'border-green-500/50', bg: 'bg-green-500/10', accent: 'text-green-400' },
+  AGGRESSIVE_2STEP: { border: 'border-red-500/50', bg: 'bg-red-500/10', accent: 'text-red-400' },
+  SWING_PRO: { border: 'border-purple-500/50', bg: 'bg-purple-500/10', accent: 'text-purple-400' },
+  ELITE_ROYAL: { border: 'border-yellow-500/50', bg: 'bg-yellow-500/10', accent: 'text-yellow-400' }
 };
 
 export default function ChallengeTypes() {
+  const navigate = useNavigate();
   const [challenges, setChallenges] = useState<ChallengeType[]>([]);
-  const [selectedChallenge, setSelectedChallenge] = useState<string | null>(null);
-  const [pricingTiers, setPricingTiers] = useState<Record<string, PricingTier[]>>({});
+  const [selectedChallenge, setSelectedChallenge] = useState<ChallengeType | null>(null);
+  const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTier, setSelectedTier] = useState<PricingTier | null>(null);
 
   useEffect(() => {
     fetchChallenges();
@@ -80,23 +83,6 @@ export default function ChallengeTypes() {
 
       if (challengeData) {
         setChallenges(challengeData);
-
-        for (const challenge of challengeData) {
-          const { data: pricingData, error: pricingError } = await supabase
-            .from('challenge_pricing')
-            .select('*')
-            .eq('challenge_type_id', challenge.id)
-            .order('account_size', { ascending: true });
-
-          if (pricingError) throw pricingError;
-
-          if (pricingData) {
-            setPricingTiers(prev => ({
-              ...prev,
-              [challenge.challenge_code]: pricingData
-            }));
-          }
-        }
       }
     } catch (error) {
       console.error('Error fetching challenges:', error);
@@ -105,14 +91,42 @@ export default function ChallengeTypes() {
     }
   };
 
+  const handleChallengeClick = async (challenge: ChallengeType) => {
+    setSelectedChallenge(challenge);
+    setSelectedTier(null);
+
+    const { data: pricingData, error: pricingError } = await supabase
+      .from('challenge_pricing')
+      .select('*')
+      .eq('challenge_type_id', challenge.id)
+      .order('account_size', { ascending: true });
+
+    if (pricingError) {
+      console.error('Error fetching pricing:', pricingError);
+      return;
+    }
+
+    if (pricingData) {
+      setPricingTiers(pricingData);
+    }
+  };
+
+  const handlePurchase = (tier: PricingTier) => {
+    navigate('/signup', {
+      state: {
+        returnTo: '/payment',
+        challengeCode: selectedChallenge?.challenge_code,
+        accountSize: tier.account_size,
+        price: tier.discount_price,
+        challengeName: selectedChallenge?.challenge_name
+      }
+    });
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-deep-space">
-        <Navbar />
-        <div className="max-w-7xl mx-auto px-4 py-24 text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-electric-blue"></div>
-        </div>
-        <Footer />
+      <div className="min-h-screen bg-deep-space flex items-center justify-center">
+        <div className="text-2xl">Loading challenges...</div>
       </div>
     );
   }
@@ -121,170 +135,233 @@ export default function ChallengeTypes() {
     <div className="min-h-screen bg-deep-space">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 py-24">
-        <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            <GradientText>Choose Your Challenge</GradientText>
-          </h1>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            6 unique evaluation programs designed for different trading styles. All with 50% discount and instant access.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {challenges.map((challenge) => {
-            const Icon = iconMap[challenge.challenge_code] || Trophy;
-            const gradient = colorMap[challenge.challenge_code] || 'from-blue-500 to-purple-500';
-
-            return (
-              <div
-                key={challenge.id}
-                className="glass-card p-6 cursor-pointer hover:border-electric-blue/50 transition-all relative"
-                onClick={() => setSelectedChallenge(
-                  selectedChallenge === challenge.challenge_code ? null : challenge.challenge_code
-                )}
-              >
-                {challenge.recommended && (
-                  <div className="absolute -top-3 -right-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg animate-pulse">
-                    RECOMMENDED
-                  </div>
-                )}
-
-                <div className={`w-16 h-16 bg-gradient-to-br ${gradient} rounded-2xl flex items-center justify-center mb-4`}>
-                  <Icon size={32} className="text-white" />
-                </div>
-
-                <h3 className="text-2xl font-bold mb-2">{challenge.challenge_name}</h3>
-                <p className="text-gray-400 text-sm mb-4">{challenge.description}</p>
-
-                <button className="w-full btn-gradient">
-                  {selectedChallenge === challenge.challenge_code ? 'Hide Details' : 'View Pricing'}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-
-        {selectedChallenge && pricingTiers[selectedChallenge] && (
-          <div className="glass-card p-8 mb-12">
-            <h2 className="text-3xl font-bold mb-6">
-              {challenges.find(c => c.challenge_code === selectedChallenge)?.challenge_name} - Pricing
-            </h2>
-
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-white/10">
-                    <th className="text-left py-4 px-4">Account Size</th>
-                    <th className="text-left py-4 px-4">Regular Price</th>
-                    <th className="text-left py-4 px-4">50% Discount</th>
-                    {selectedChallenge === 'PAYG_2STEP' && (
-                      <>
-                        <th className="text-left py-4 px-4">Phase 1</th>
-                        <th className="text-left py-4 px-4">Phase 2</th>
-                      </>
-                    )}
-                    <th className="text-left py-4 px-4">Profit Target</th>
-                    <th className="text-left py-4 px-4">Rules</th>
-                    <th className="text-left py-4 px-4"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pricingTiers[selectedChallenge].map((tier) => (
-                    <tr key={tier.id} className="border-b border-white/5 hover:bg-white/5">
-                      <td className="py-4 px-4 font-bold">${tier.account_size.toLocaleString()}</td>
-                      <td className="py-4 px-4 text-gray-400 line-through">${tier.regular_price}</td>
-                      <td className="py-4 px-4 text-green-400 font-bold text-xl">${tier.discount_price}</td>
-
-                      {selectedChallenge === 'PAYG_2STEP' && (
-                        <>
-                          <td className="py-4 px-4 text-sm">
-                            ${tier.phase_1_price ? (tier.phase_1_price / 2).toFixed(0) : 0}
-                          </td>
-                          <td className="py-4 px-4 text-sm">
-                            ${tier.phase_2_price ? (tier.phase_2_price / 2).toFixed(0) : 0}
-                          </td>
-                        </>
-                      )}
-
-                      <td className="py-4 px-4">
-                        {tier.phase_1_target_pct ? (
-                          <div className="text-sm">
-                            <div>Phase 1: {tier.phase_1_target_pct}% (${tier.phase_1_target_amount?.toLocaleString()})</div>
-                            <div>Phase 2: {tier.phase_2_target_pct}% (${tier.phase_2_target_amount?.toLocaleString()})</div>
-                          </div>
-                        ) : (
-                          <div className="text-sm">
-                            {tier.profit_target_pct}% (${tier.profit_target_amount?.toLocaleString()})
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="py-4 px-4 text-sm">
-                        <div>Daily DD: {tier.daily_dd_pct}%</div>
-                        <div>Max DD: {tier.max_dd_pct}%</div>
-                        <div>Min Days: {tier.min_trading_days}</div>
-                        {tier.time_limit_days && <div>Time Limit: {tier.time_limit_days} days</div>}
-                      </td>
-
-                      <td className="py-4 px-4">
-                        <button className="px-4 py-2 bg-electric-blue hover:bg-electric-blue/80 rounded-lg font-semibold transition">
-                          Purchase
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="mt-8 p-6 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-              <h3 className="text-xl font-bold mb-4">Challenge Rules Summary</h3>
-              <div className="grid md:grid-cols-2 gap-4 text-sm">
-                <div className="flex items-start gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                  <span>All trading strategies allowed (EAs, news trading, scalping)</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                  <span>Minimum 2 trades per day required</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                  <span>Must trade at least 2 different instruments</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                  <span>Consistency requirements apply (no single-day profits)</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                  <span>Real-time drawdown monitoring</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                  <span>80-90% profit split on funded accounts</span>
-                </div>
-              </div>
-            </div>
+      <div className="pt-32 pb-20 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6">
+              Choose Your <GradientText>Challenge Type</GradientText>
+            </h1>
+            <p className="text-xl text-gray-400">
+              6 unique challenges designed for different trading styles. Find your perfect match.
+            </p>
           </div>
-        )}
 
-        <div className="glass-card p-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">Need Help Choosing?</h2>
-          <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
-            Not sure which challenge is right for you? Check out our comparison guide or contact our support team.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="/faq" className="px-8 py-4 bg-white/10 hover:bg-white/20 rounded-lg font-semibold transition">
-              View FAQ
-            </a>
-            <a href="/support" className="px-8 py-4 btn-gradient">
-              Contact Support
-            </a>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            {challenges.map((challenge) => {
+              const Icon = iconMap[challenge.challenge_code];
+              const colors = colorMap[challenge.challenge_code];
+
+              return (
+                <div
+                  key={challenge.id}
+                  onClick={() => handleChallengeClick(challenge)}
+                  className={`glass-card p-8 cursor-pointer transition-all hover:scale-105 ${colors.border} hover:shadow-xl relative group`}
+                >
+                  {challenge.recommended && (
+                    <div className="absolute top-4 right-4 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse">
+                      RECOMMENDED
+                    </div>
+                  )}
+
+                  <div className={`${colors.bg} w-20 h-20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                    <Icon className={colors.accent} size={40} />
+                  </div>
+
+                  <h3 className="text-2xl font-bold mb-3">{challenge.challenge_name}</h3>
+                  <p className="text-gray-400 mb-6">{challenge.description}</p>
+
+                  <button className={`w-full py-3 ${colors.bg} ${colors.accent} rounded-lg font-semibold hover:bg-opacity-80 transition-all flex items-center justify-center space-x-2`}>
+                    <span>View Details</span>
+                    <ArrowRight size={20} />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
+
+      {selectedChallenge && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="glass-card max-w-6xl w-full my-8 relative">
+            <button
+              onClick={() => setSelectedChallenge(null)}
+              className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all z-10"
+            >
+              <X size={24} />
+            </button>
+
+            <div className="p-8">
+              <div className="flex items-center space-x-4 mb-8">
+                {(() => {
+                  const Icon = iconMap[selectedChallenge.challenge_code];
+                  const colors = colorMap[selectedChallenge.challenge_code];
+                  return (
+                    <>
+                      <div className={`${colors.bg} w-16 h-16 rounded-xl flex items-center justify-center`}>
+                        <Icon className={colors.accent} size={32} />
+                      </div>
+                      <div>
+                        <h2 className="text-4xl font-bold">{selectedChallenge.challenge_name}</h2>
+                        <p className="text-gray-400">{selectedChallenge.description}</p>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+
+              <div className="mb-8">
+                <h3 className="text-2xl font-bold mb-4">Select Account Size</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {pricingTiers.map((tier) => (
+                    <div
+                      key={tier.id}
+                      onClick={() => setSelectedTier(tier)}
+                      className={`glass-card p-6 cursor-pointer transition-all hover:scale-105 ${
+                        selectedTier?.id === tier.id ? 'border-2 border-electric-blue' : ''
+                      }`}
+                    >
+                      <div className="text-center">
+                        <div className="text-3xl font-bold mb-2">
+                          ${tier.account_size.toLocaleString()}
+                        </div>
+
+                        {selectedChallenge.challenge_code === 'PAYG_2STEP' ? (
+                          <div className="space-y-1">
+                            <div className="text-sm text-gray-400">Phase 1</div>
+                            <div className="text-2xl font-bold text-green-400">
+                              ${(tier.phase_1_price! / 2).toFixed(0)}
+                            </div>
+                            <div className="text-xs text-gray-500 line-through">
+                              ${tier.phase_1_price}
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="text-3xl font-bold text-neon-green mb-1">
+                              ${tier.discount_price}
+                            </div>
+                            <div className="text-sm text-gray-500 line-through">
+                              ${tier.regular_price}
+                            </div>
+                            <div className="text-xs text-green-400 font-bold">
+                              50% OFF
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {selectedTier && (
+                <div className="glass-card p-6 mb-6 bg-blue-500/10 border-blue-500/30">
+                  <h4 className="text-xl font-bold mb-4">Challenge Details</h4>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="text-green-400" size={20} />
+                      <span>
+                        Account Size: <strong>${selectedTier.account_size.toLocaleString()}</strong>
+                      </span>
+                    </div>
+
+                    {selectedTier.phase_1_target_pct && (
+                      <>
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle className="text-green-400" size={20} />
+                          <span>
+                            Phase 1: {selectedTier.phase_1_target_pct}% (${selectedTier.phase_1_target_amount?.toLocaleString()})
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle className="text-green-400" size={20} />
+                          <span>
+                            Phase 2: {selectedTier.phase_2_target_pct}% (${selectedTier.phase_2_target_amount?.toLocaleString()})
+                          </span>
+                        </div>
+                      </>
+                    )}
+
+                    {selectedTier.profit_target_pct && (
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="text-green-400" size={20} />
+                        <span>
+                          Profit Target: {selectedTier.profit_target_pct}% (${selectedTier.profit_target_amount?.toLocaleString()})
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="text-green-400" size={20} />
+                      <span>Daily DD: {selectedTier.daily_dd_pct}%</span>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="text-green-400" size={20} />
+                      <span>Max DD: {selectedTier.max_dd_pct}%</span>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="text-green-400" size={20} />
+                      <span>Min Trading Days: {selectedTier.min_trading_days}</span>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="text-green-400" size={20} />
+                      <span>
+                        Time Limit: {selectedTier.time_limit_days ? `${selectedTier.time_limit_days} days` : 'Unlimited'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handlePurchase(selectedTier)}
+                    className="w-full mt-6 py-4 btn-gradient text-xl font-bold flex items-center justify-center space-x-3 group"
+                  >
+                    <DollarSign size={24} />
+                    <span>Purchase Challenge - ${selectedTier.discount_price}</span>
+                    <ArrowRight size={24} className="group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </div>
+              )}
+
+              <div className="glass-card p-6 bg-yellow-500/10 border-yellow-500/30">
+                <h4 className="text-xl font-bold mb-3 flex items-center space-x-2">
+                  <Trophy className="text-yellow-400" size={24} />
+                  <span>What's Included</span>
+                </h4>
+                <ul className="space-y-2">
+                  <li className="flex items-start space-x-2">
+                    <CheckCircle className="text-green-400 mt-0.5 flex-shrink-0" size={20} />
+                    <span>Unlimited trading time (where applicable)</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <CheckCircle className="text-green-400 mt-0.5 flex-shrink-0" size={20} />
+                    <span>Trade all major forex pairs, commodities, indices, and crypto</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <CheckCircle className="text-green-400 mt-0.5 flex-shrink-0" size={20} />
+                    <span>Keep 80-90% of profits (scaling to 90%)</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <CheckCircle className="text-green-400 mt-0.5 flex-shrink-0" size={20} />
+                    <span>Bi-weekly payouts</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <CheckCircle className="text-green-400 mt-0.5 flex-shrink-0" size={20} />
+                    <span>No consistency rules or minimum days between trades</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <CheckCircle className="text-green-400 mt-0.5 flex-shrink-0" size={20} />
+                    <span>Real-time tracking dashboard</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
