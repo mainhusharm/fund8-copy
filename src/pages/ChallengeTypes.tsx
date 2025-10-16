@@ -182,8 +182,8 @@ export default function ChallengeTypes() {
       </div>
 
       {selectedChallenge && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="glass-card max-w-6xl w-full my-8 relative">
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto">
+          <div className="glass-card max-w-6xl w-full my-8 relative z-[10000]">
             <button
               onClick={() => setSelectedChallenge(null)}
               className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all z-10"

@@ -5,38 +5,29 @@ export async function getCurrentUser() {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) return null;
 
-  const { data, error: userError } = await supabase
-    .from('users')
-    .select('id, email, first_name, last_name, email_verified')
-    .eq('id', user.id)
-    .maybeSingle();
-
-  if (userError || !data) return null;
-  return data;
+  return {
+    id: user.id,
+    email: user.email,
+    first_name: user.user_metadata?.first_name || '',
+    last_name: user.user_metadata?.last_name || '',
+    email_verified: user.email_confirmed_at !== null
+  };
 }
 
 export async function signUp(email: string, password: string, firstName: string, lastName: string) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: {
+        first_name: firstName,
+        last_name: lastName
+      }
+    }
   });
 
   if (error || !data.user) {
     return { success: false, error: error?.message || 'Signup failed' };
-  }
-
-  const { error: profileError } = await supabase
-    .from('users')
-    .insert({
-      id: data.user.id,
-      email: email,
-      first_name: firstName,
-      last_name: lastName,
-      email_verified: false,
-    });
-
-  if (profileError) {
-    return { success: false, error: 'Failed to create user profile' };
   }
 
   // Send welcome email
