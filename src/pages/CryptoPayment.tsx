@@ -18,7 +18,14 @@ const API_KEYS = {
 export default function CryptoPayment() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { accountSize, challengeType, originalPrice } = location.state || {};
+
+  // Try to get data from location.state first, then fall back to URL params
+  const urlParams = new URLSearchParams(location.search);
+  const accountSize = location.state?.accountSize || Number(urlParams.get('accountSize'));
+  const challengeType = location.state?.challengeType || urlParams.get('challengeType');
+  const originalPrice = location.state?.originalPrice !== undefined
+    ? location.state.originalPrice
+    : Number(urlParams.get('originalPrice'));
 
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);

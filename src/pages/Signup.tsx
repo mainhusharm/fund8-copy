@@ -61,31 +61,21 @@ export default function Signup() {
       console.log('State check:', { returnTo, accountSize, challengeType, originalPrice });
 
       if (returnTo && accountSize && challengeType && originalPrice !== undefined) {
-        console.log('Navigating to payment with state:', {
-          accountSize,
-          challengeType,
-          originalPrice
-        });
+        console.log('Navigating to payment page');
 
-        // Use replace to prevent back button from returning to signup
-        navigate(returnTo, {
-          state: {
-            accountSize,
-            challengeType,
-            originalPrice
-          },
-          replace: true
-        });
+        // Use query parameters for more reliable data transfer
+        const paymentUrl = `/payment?accountSize=${accountSize}&challengeType=${encodeURIComponent(challengeType)}&originalPrice=${originalPrice}`;
+        console.log('Payment URL:', paymentUrl);
+
+        window.location.href = paymentUrl;
       } else {
         console.log('Missing state values:', { returnTo, accountSize, challengeType, originalPrice });
-        navigate('/dashboard', { replace: true });
+        window.location.href = '/dashboard';
       }
     } else {
       setError(result.error || 'Registration failed');
       setLoading(false);
     }
-
-    // Don't set loading to false here for success case - let navigation happen
   };
 
   return (
