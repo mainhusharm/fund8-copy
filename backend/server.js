@@ -11,6 +11,7 @@ import certificatesRoutes from './routes/certificates.js';
 import notificationsRoutes from './routes/notifications.js';
 import supportRoutes from './routes/support.js';
 import challengesRoutes from './routes/challenges.js';
+import analyticsRoutes from './routes/analytics.js';
 
 import monitoringService from './services/monitoringService.js';
 
@@ -41,6 +42,7 @@ app.use('/api/certificates', certificatesRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/challenges', challengesRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 app.get('/health', (req, res) => {
   res.json({
