@@ -12,23 +12,9 @@ router.get('/mt5-data/:accountId', async (req, res) => {
     const { accountId } = req.params;
 
     if (!token) {
-      return res.status(200).json({
-        balance: 5000,
-        equity: 5000 + (Math.random() * 1000 - 500),
-        margin: (Math.random() * 1000).toFixed(2),
-        freeMargin: (5000 * 0.9).toFixed(2),
-        marginLevel: (Math.random() * 200 + 100).toFixed(2),
-        openTrades: Math.floor(Math.random() * 5),
-        profit: (Math.random() * 2000 - 1000).toFixed(2),
-        profitPercentage: (Math.random() * 10 - 5).toFixed(2),
-        totalTrades: Math.floor(Math.random() * 50 + 10),
-        winRate: (Math.random() * 30 + 50).toFixed(2),
-        averageWin: (Math.random() * 500 + 100).toFixed(2),
-        averageLoss: (Math.random() * 300 + 50).toFixed(2),
-        profitFactor: (Math.random() * 1 + 1).toFixed(2),
-        sharpeRatio: (Math.random() * 2).toFixed(2),
-        maxDrawdown: (Math.random() * 15 + 5).toFixed(2),
-        lastUpdate: new Date().toISOString()
+      return res.status(500).json({
+        error: 'MetaAPI token not configured',
+        message: 'Please set METAAPI_TOKEN in environment variables'
       });
     }
 
@@ -95,23 +81,10 @@ router.get('/mt5-data/:accountId', async (req, res) => {
 
   } catch (error) {
     console.error('Error fetching MT5 data:', error);
-    res.status(200).json({
-      balance: 5000,
-      equity: 5000 + (Math.random() * 1000 - 500),
-      margin: (Math.random() * 1000).toFixed(2),
-      freeMargin: (5000 * 0.9).toFixed(2),
-      marginLevel: (Math.random() * 200 + 100).toFixed(2),
-      openTrades: Math.floor(Math.random() * 5),
-      profit: (Math.random() * 2000 - 1000).toFixed(2),
-      profitPercentage: (Math.random() * 10 - 5).toFixed(2),
-      totalTrades: Math.floor(Math.random() * 50 + 10),
-      winRate: (Math.random() * 30 + 50).toFixed(2),
-      averageWin: (Math.random() * 500 + 100).toFixed(2),
-      averageLoss: (Math.random() * 300 + 50).toFixed(2),
-      profitFactor: (Math.random() * 1 + 1).toFixed(2),
-      sharpeRatio: (Math.random() * 2).toFixed(2),
-      maxDrawdown: (Math.random() * 15 + 5).toFixed(2),
-      lastUpdate: new Date().toISOString()
+    res.status(500).json({
+      error: 'Failed to fetch MT5 data',
+      message: error.message || 'Unknown error occurred',
+      details: 'Check MetaAPI connection and account credentials'
     });
   }
 });

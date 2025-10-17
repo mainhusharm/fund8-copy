@@ -30,6 +30,7 @@ import { signOut } from '../lib/auth';
 import ContractAcceptance from '../components/dashboard/ContractAcceptance';
 import AccountStatusBadge from '../components/dashboard/AccountStatusBadge';
 import EnhancedSettings from '../components/dashboard/EnhancedSettings';
+import Analytics3DBackground from '../components/dashboard/Analytics3DBackground';
 
 type Section =
   | 'overview'
@@ -232,9 +233,14 @@ function OverviewSection({ user }: { user: any }) {
         setSelectedAccountId(active[0].account_id);
       }
 
+      // Calculate real stats from active accounts
+      const totalBalance = active.reduce((sum, acc) => sum + parseFloat(acc.current_balance || acc.account_size), 0);
+      const totalAccountSize = active.reduce((sum, acc) => sum + parseFloat(acc.account_size), 0);
+      const totalProfit = totalBalance - totalAccountSize;
+
       setStats({
-        balance: 0,
-        profit: 0,
+        balance: totalBalance,
+        profit: totalProfit,
         accounts: active.length,
         pending: pending.length,
       });
@@ -575,7 +581,10 @@ function AnalyticsSection({ user }: { user: any }) {
     setLoading(true);
     try {
       const account = mt5Accounts.find(a => a.id === selectedAccountId);
-      if (!account) return;
+      if (!account) {
+        setLoading(false);
+        return;
+      }
 
       const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
       const response = await fetch(`${backendUrl}/api/analytics/mt5-data/${account.login}`);
@@ -584,46 +593,12 @@ function AnalyticsSection({ user }: { user: any }) {
         const data = await response.json();
         setRealTimeData(data);
       } else {
-        setRealTimeData({
-          balance: account.accountSize,
-          equity: account.accountSize + (Math.random() * 1000 - 500),
-          margin: (Math.random() * 1000).toFixed(2),
-          freeMargin: (account.accountSize * 0.9).toFixed(2),
-          marginLevel: (Math.random() * 200 + 100).toFixed(2),
-          openTrades: Math.floor(Math.random() * 5),
-          profit: (Math.random() * 2000 - 1000).toFixed(2),
-          profitPercentage: (Math.random() * 10 - 5).toFixed(2),
-          totalTrades: Math.floor(Math.random() * 50 + 10),
-          winRate: (Math.random() * 30 + 50).toFixed(2),
-          averageWin: (Math.random() * 500 + 100).toFixed(2),
-          averageLoss: (Math.random() * 300 + 50).toFixed(2),
-          profitFactor: (Math.random() * 1 + 1).toFixed(2),
-          sharpeRatio: (Math.random() * 2).toFixed(2),
-          maxDrawdown: (Math.random() * 15 + 5).toFixed(2),
-          lastUpdate: new Date().toISOString()
-        });
+        console.error('Failed to fetch MT5 data from backend');
+        setRealTimeData(null);
       }
     } catch (error) {
       console.error('Error fetching real-time data:', error);
-      const account = mt5Accounts.find(a => a.id === selectedAccountId);
-      setRealTimeData({
-        balance: account.accountSize,
-        equity: account.accountSize + (Math.random() * 1000 - 500),
-        margin: (Math.random() * 1000).toFixed(2),
-        freeMargin: (account.accountSize * 0.9).toFixed(2),
-        marginLevel: (Math.random() * 200 + 100).toFixed(2),
-        openTrades: Math.floor(Math.random() * 5),
-        profit: (Math.random() * 2000 - 1000).toFixed(2),
-        profitPercentage: (Math.random() * 10 - 5).toFixed(2),
-        totalTrades: Math.floor(Math.random() * 50 + 10),
-        winRate: (Math.random() * 30 + 50).toFixed(2),
-        averageWin: (Math.random() * 500 + 100).toFixed(2),
-        averageLoss: (Math.random() * 300 + 50).toFixed(2),
-        profitFactor: (Math.random() * 1 + 1).toFixed(2),
-        sharpeRatio: (Math.random() * 2).toFixed(2),
-        maxDrawdown: (Math.random() * 15 + 5).toFixed(2),
-        lastUpdate: new Date().toISOString()
-      });
+      setRealTimeData(null);
     } finally {
       setLoading(false);
     }
@@ -632,24 +607,31 @@ function AnalyticsSection({ user }: { user: any }) {
   const selectedAccount = mt5Accounts.find(a => a.id === selectedAccountId);
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-4xl font-bold mb-2">
-            <GradientText>Trading Analytics</GradientText>
-          </h1>
-          <p className="text-white/70">Real-time performance metrics and trading insights</p>
-        </div>
-        {realTimeData && (
-          <div className="flex items-center space-x-2 text-sm text-neon-green">
-            <Activity className="animate-pulse" size={16} />
-            <span>Live Data</span>
-            <span className="text-white/50">Updated {new Date(realTimeData.lastUpdate).toLocaleTimeString()}</span>
-          </div>
-        )}
+    <div className="relative">
+      {/* 3D Background */}
+      <div className="absolute inset-0 overflow-hidden rounded-xl">
+        <Analytics3DBackground />
       </div>
 
-      {mt5Accounts.length === 0 ? (
+      {/* Content */}
+      <div className="relative z-10">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">
+              <GradientText>Trading Analytics</GradientText>
+            </h1>
+            <p className="text-white/70">Real-time performance metrics from MT5</p>
+          </div>
+          {realTimeData && (
+            <div className="flex items-center space-x-2 text-sm text-neon-green bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full">
+              <Activity className="animate-pulse" size={16} />
+              <span>Live Data</span>
+              <span className="text-white/50">Updated {new Date(realTimeData.lastUpdate).toLocaleTimeString()}</span>
+            </div>
+          )}
+        </div>
+
+        {mt5Accounts.length === 0 ? (
         <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-8 text-center">
           <BarChart3 size={64} className="mx-auto mb-4 text-yellow-500" />
           <h3 className="text-2xl font-bold mb-2">No Active Accounts</h3>
@@ -682,14 +664,14 @@ function AnalyticsSection({ user }: { user: any }) {
           ) : realTimeData ? (
             <>
               <div className="grid md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-gradient-to-br from-electric-blue/20 to-neon-purple/20 rounded-xl p-6 border border-white/10">
-                  <div className="text-sm text-white/60 mb-2">Account Balance</div>
+                <div className="group bg-gradient-to-br from-electric-blue/20 to-neon-purple/20 backdrop-blur-md rounded-xl p-6 border border-white/20 hover:border-electric-blue/50 transition-all duration-300 hover:shadow-lg hover:shadow-electric-blue/20 hover:scale-105">
+                  <div className="text-sm text-white/60 mb-2 group-hover:text-white/80 transition-colors">Account Balance</div>
                   <div className="text-3xl font-bold mb-2">${parseFloat(realTimeData.balance).toLocaleString()}</div>
                   <div className="text-xs text-white/50">Initial Balance</div>
                 </div>
 
-                <div className="bg-gradient-to-br from-neon-green/20 to-electric-blue/20 rounded-xl p-6 border border-white/10">
-                  <div className="text-sm text-white/60 mb-2">Current Equity</div>
+                <div className="group bg-gradient-to-br from-neon-green/20 to-electric-blue/20 backdrop-blur-md rounded-xl p-6 border border-white/20 hover:border-neon-green/50 transition-all duration-300 hover:shadow-lg hover:shadow-neon-green/20 hover:scale-105">
+                  <div className="text-sm text-white/60 mb-2 group-hover:text-white/80 transition-colors">Current Equity</div>
                   <div className="text-3xl font-bold mb-2">${parseFloat(realTimeData.equity).toLocaleString()}</div>
                   <div className={`text-xs flex items-center ${parseFloat(realTimeData.profitPercentage) >= 0 ? 'text-neon-green' : 'text-red-400'}`}>
                     <TrendingUp size={12} className="mr-1" />
@@ -697,16 +679,16 @@ function AnalyticsSection({ user }: { user: any }) {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-cyber-purple/20 to-electric-blue/20 rounded-xl p-6 border border-white/10">
-                  <div className="text-sm text-white/60 mb-2">Total P&L</div>
+                <div className={`group bg-gradient-to-br backdrop-blur-md rounded-xl p-6 border border-white/20 transition-all duration-300 hover:shadow-lg hover:scale-105 ${parseFloat(realTimeData.profit) >= 0 ? 'from-neon-green/20 to-electric-blue/20 hover:border-neon-green/50 hover:shadow-neon-green/20' : 'from-red-500/20 to-orange-500/20 hover:border-red-500/50 hover:shadow-red-500/20'}`}>
+                  <div className="text-sm text-white/60 mb-2 group-hover:text-white/80 transition-colors">Total P&L</div>
                   <div className={`text-3xl font-bold mb-2 ${parseFloat(realTimeData.profit) >= 0 ? 'text-neon-green' : 'text-red-400'}`}>
                     ${Math.abs(parseFloat(realTimeData.profit)).toLocaleString()}
                   </div>
                   <div className="text-xs text-white/50">{parseFloat(realTimeData.profit) >= 0 ? 'Profit' : 'Loss'}</div>
                 </div>
 
-                <div className="bg-gradient-to-br from-orange-500/20 to-neon-purple/20 rounded-xl p-6 border border-white/10">
-                  <div className="text-sm text-white/60 mb-2">Open Positions</div>
+                <div className="group bg-gradient-to-br from-orange-500/20 to-neon-purple/20 backdrop-blur-md rounded-xl p-6 border border-white/20 hover:border-orange-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 hover:scale-105">
+                  <div className="text-sm text-white/60 mb-2 group-hover:text-white/80 transition-colors">Open Positions</div>
                   <div className="text-3xl font-bold mb-2">{realTimeData.openTrades}</div>
                   <div className="text-xs text-white/50">Active Trades</div>
                 </div>
@@ -798,9 +780,21 @@ function AnalyticsSection({ user }: { user: any }) {
                 </div>
               </div>
             </>
-          ) : null}
+          ) : (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-8 text-center backdrop-blur-sm">
+              <Activity size={64} className="mx-auto mb-4 text-red-500" />
+              <h3 className="text-2xl font-bold mb-2">Unable to Load Real-Time Data</h3>
+              <p className="text-white/70 mb-4">Failed to connect to MT5 backend API. Please ensure:</p>
+              <ul className="text-left max-w-md mx-auto text-white/60 space-y-2">
+                <li>• Backend server is running (http://localhost:5000)</li>
+                <li>• MetaAPI is properly configured</li>
+                <li>• MT5 account credentials are correct</li>
+              </ul>
+            </div>
+          )}
         </>
       )}
+      </div>
     </div>
   );
 }
