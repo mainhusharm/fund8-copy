@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { signUp } from '../lib/auth';
+import { signUp, getCurrentUser } from '../lib/auth';
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -15,6 +15,23 @@ export default function Signup() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    checkExistingUser();
+  }, []);
+
+  const checkExistingUser = async () => {
+    const user = await getCurrentUser();
+    if (user && returnTo && accountSize && challengeType && originalPrice) {
+      navigate(returnTo, {
+        state: {
+          accountSize: accountSize,
+          challengeType: challengeType,
+          originalPrice: originalPrice
+        }
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
