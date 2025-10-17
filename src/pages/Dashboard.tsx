@@ -192,14 +192,43 @@ function OverviewSection({ user }: { user: any }) {
         .eq('user_id', user.id)
         .order('purchase_date', { ascending: false });
 
-      setPendingChallenges(challenges || []);
-      setMt5Accounts([]);
+      // Separate challenges into pending (no credentials) and active (has credentials)
+      const pending = challenges?.filter(c =>
+        !c.trading_account_id ||
+        !c.credentials_sent ||
+        c.status === 'pending_payment'
+      ) || [];
+
+      const active = challenges?.filter(c =>
+        c.trading_account_id &&
+        c.credentials_sent &&
+        c.status !== 'pending_payment'
+      ).map(c => ({
+        account_id: c.id,
+        user_id: c.user_id,
+        mt5_login: c.trading_account_id,
+        mt5_password: c.trading_account_password || 'Not Set',
+        mt5_server: c.trading_account_server || 'MetaQuotes-Demo',
+        account_type: c.challenge_type_id || 'standard',
+        account_size: c.account_size,
+        current_balance: 0,
+        status: c.status,
+        created_at: c.purchase_date
+      })) || [];
+
+      setPendingChallenges(pending);
+      setMt5Accounts(active);
+
+      // Set first active account as selected by default
+      if (active.length > 0 && !selectedAccountId) {
+        setSelectedAccountId(active[0].account_id);
+      }
 
       setStats({
         balance: 0,
         profit: 0,
-        accounts: 0,
-        pending: challenges?.length || 0,
+        accounts: active.length,
+        pending: pending.length,
       });
     } catch (error) {
       console.error('Error fetching data:', error);
