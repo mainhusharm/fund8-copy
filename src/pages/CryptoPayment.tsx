@@ -155,6 +155,28 @@ export default function CryptoPayment() {
           });
         }
 
+        // Get challenge type ID
+        const { data: challengeTypeData } = await supabase
+          .from('challenge_types')
+          .select('id')
+          .eq('challenge_code', challengeType)
+          .maybeSingle();
+
+        // Create user challenge record
+        if (challengeTypeData) {
+          await supabase
+            .from('user_challenges')
+            .insert({
+              user_id: user.id,
+              challenge_type_id: challengeTypeData.id,
+              account_size: accountSize,
+              amount_paid: finalPrice,
+              payment_id: payment?.id,
+              discount_applied: appliedCoupon ? true : false,
+              status: 'pending_credentials'
+            });
+        }
+
         setVerificationStatus('success');
 
         setTimeout(() => {

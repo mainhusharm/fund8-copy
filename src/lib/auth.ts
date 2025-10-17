@@ -30,12 +30,10 @@ export async function signUp(email: string, password: string, firstName: string,
     return { success: false, error: error?.message || 'Signup failed' };
   }
 
-  // Send welcome email
-  try {
-    await sendWelcomeEmail(email, firstName);
-  } catch (error) {
+  // Send welcome email (don't block signup if email fails)
+  sendWelcomeEmail(email, firstName).catch(error => {
     console.error('Failed to send welcome email:', error);
-  }
+  });
 
   return { success: true, user: data.user };
 }
