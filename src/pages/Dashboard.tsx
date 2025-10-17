@@ -133,7 +133,7 @@ export default function Dashboard() {
 
             <div className="mt-6 pt-6 border-t border-white/10 space-y-3">
               <button
-                onClick={() => navigate('/pricing')}
+                onClick={() => navigate('/challenge-types')}
                 className="w-full px-4 py-3 bg-gradient-to-r from-neon-green to-electric-blue rounded-lg font-semibold text-sm hover:scale-105 transition-transform"
               >
                 Purchase New Challenge
