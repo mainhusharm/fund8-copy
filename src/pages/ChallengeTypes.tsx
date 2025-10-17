@@ -117,10 +117,9 @@ export default function ChallengeTypes() {
     if (user) {
       navigate('/payment', {
         state: {
-          challengeCode: selectedChallenge?.challenge_code,
           accountSize: tier.account_size,
-          price: tier.discount_price,
-          challengeName: selectedChallenge?.challenge_name
+          challengeType: selectedChallenge?.challenge_code,
+          originalPrice: tier.discount_price
         }
       });
     } else {

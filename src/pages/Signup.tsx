@@ -29,13 +29,12 @@ export default function Signup() {
     );
 
     if (result.success) {
-      if (returnTo && accountSize && challengeType) {
+      if (returnTo && accountSize && challengeType && originalPrice) {
         navigate(returnTo, {
           state: {
-            challengeCode: challengeType,
             accountSize: accountSize,
-            price: originalPrice,
-            challengeName: challengeType
+            challengeType: challengeType,
+            originalPrice: originalPrice
           }
         });
       } else {
