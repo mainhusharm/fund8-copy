@@ -58,24 +58,34 @@ export default function Signup() {
     console.log('Signup result:', result);
 
     if (result.success) {
-      if (returnTo && accountSize && challengeType && originalPrice) {
-        console.log('Navigating to payment with state');
+      console.log('State check:', { returnTo, accountSize, challengeType, originalPrice });
+
+      if (returnTo && accountSize && challengeType && originalPrice !== undefined) {
+        console.log('Navigating to payment with state:', {
+          accountSize,
+          challengeType,
+          originalPrice
+        });
+
+        // Use replace to prevent back button from returning to signup
         navigate(returnTo, {
           state: {
-            accountSize: accountSize,
-            challengeType: challengeType,
-            originalPrice: originalPrice
-          }
+            accountSize,
+            challengeType,
+            originalPrice
+          },
+          replace: true
         });
       } else {
-        console.log('Missing state, going to challenge-types');
-        navigate('/dashboard');
+        console.log('Missing state values:', { returnTo, accountSize, challengeType, originalPrice });
+        navigate('/dashboard', { replace: true });
       }
     } else {
       setError(result.error || 'Registration failed');
+      setLoading(false);
     }
 
-    setLoading(false);
+    // Don't set loading to false here for success case - let navigation happen
   };
 
   return (

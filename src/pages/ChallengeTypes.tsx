@@ -112,14 +112,16 @@ export default function ChallengeTypes() {
   };
 
   const handlePurchase = async (tier: PricingTier) => {
-    navigate('/signup', {
-      state: {
-        returnTo: '/payment',
-        accountSize: tier.account_size,
-        challengeType: selectedChallenge?.challenge_code,
-        originalPrice: tier.discount_price
-      }
-    });
+    const navState = {
+      returnTo: '/payment',
+      accountSize: tier.account_size,
+      challengeType: selectedChallenge?.challenge_code,
+      originalPrice: tier.discount_price
+    };
+
+    console.log('ChallengeTypes navigating to signup with state:', navState);
+
+    navigate('/signup', { state: navState });
   };
 
   if (loading) {
