@@ -75,13 +75,13 @@ export default function AdminMT5() {
           account_id: c.id,
           user_id: c.user_id,
           mt5_login: c.trading_account_id || 'Not Assigned',
-          mt5_password: 'Hidden',
-          mt5_server: 'MetaQuotes-Demo',
-          account_type: 'Standard',
+          mt5_password: c.trading_account_password || 'Not Set',
+          mt5_server: c.trading_account_server || 'MetaQuotes-Demo',
+          account_type: c.challenge_type_id || 'Standard',
           account_size: c.account_size,
           current_balance: 0,
           status: c.status,
-          is_sent: true,
+          is_sent: c.credentials_sent || false,
           created_at: c.purchase_date,
           user_email: user?.email || 'Unknown',
           user_name: user?.full_name || 'N/A',
@@ -309,27 +309,14 @@ function AccountCard({ account, onUpdate }: { account: MT5Account; onUpdate: () 
     try {
       // Mark as sent first (this will make credentials visible to user)
       const { error: updateError } = await supabase
-        .from('mt5_accounts')
-        .update({ is_sent: true, sent_at: new Date().toISOString() })
-        .eq('account_id', account.account_id);
+        .from('user_challenges')
+        .update({
+          credentials_sent: true,
+          credentials_sent_at: new Date().toISOString()
+        })
+        .eq('id', account.account_id);
 
       if (updateError) throw updateError;
-
-      // Try to queue email (non-blocking, may fail if email system not set up)
-      try {
-        await supabase
-          .from('email_queue')
-          .insert({
-            user_id: account.user_id,
-            account_id: account.account_id,
-            template_name: 'mt5_credentials',
-            to_email: account.user_email,
-            subject: `Your FluxFunded MT5 Account - ${account.account_type}`,
-            html_body: generateEmailHTML(account)
-          });
-      } catch (emailError) {
-        console.warn('Email queue failed, but credentials are marked as sent:', emailError);
-      }
 
       alert('Credentials marked as sent! User can now see them in their dashboard.');
       onUpdate();
@@ -543,7 +530,10 @@ function CreateAccountModal({ users, onClose, onSuccess }: any) {
           .from('user_challenges')
           .update({
             trading_account_id: formData.mt5_login,
-            status: 'active'
+            trading_account_password: formData.mt5_password,
+            trading_account_server: formData.mt5_server,
+            status: 'active',
+            credentials_sent: false
           })
           .eq('id', pendingChallenges[0].id);
 
@@ -557,8 +547,11 @@ function CreateAccountModal({ users, onClose, onSuccess }: any) {
             challenge_type_id: 'manual',
             account_size: formData.account_size,
             trading_account_id: formData.mt5_login,
+            trading_account_password: formData.mt5_password,
+            trading_account_server: formData.mt5_server,
             status: 'active',
-            purchase_date: new Date().toISOString()
+            purchase_date: new Date().toISOString(),
+            credentials_sent: false
           });
 
         if (insertError) throw insertError;
