@@ -16,13 +16,21 @@ export default function Signup() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const [existingUser, setExistingUser] = useState<any>(null);
+
   useEffect(() => {
     checkExistingUser();
   }, []);
 
   const checkExistingUser = async () => {
     const user = await getCurrentUser();
-    if (user && returnTo && accountSize && challengeType && originalPrice) {
+    if (user) {
+      setExistingUser(user);
+    }
+  };
+
+  const handleContinueAsExistingUser = () => {
+    if (returnTo && accountSize && challengeType && originalPrice) {
       navigate(returnTo, {
         state: {
           accountSize: accountSize,
@@ -98,7 +106,40 @@ export default function Signup() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {existingUser && accountSize && challengeType ? (
+          <div className="space-y-4">
+            <div className="bg-neon-green/10 border border-neon-green/30 rounded-lg p-4 mb-6">
+              <p className="text-center text-neon-green font-medium">
+                Welcome back, {existingUser.email}!
+              </p>
+              <p className="text-center text-sm text-gray-400 mt-2">
+                You're already signed in. Click continue to proceed with your purchase.
+              </p>
+            </div>
+
+            <button
+              onClick={handleContinueAsExistingUser}
+              className="w-full bg-gradient-to-r from-electric-blue to-cyber-purple text-white font-bold py-4 rounded-lg hover:opacity-90 transition-all"
+            >
+              Continue to Payment
+            </button>
+
+            <p className="text-center text-sm text-gray-400">
+              Not you?{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  // Sign out and reload
+                  navigate('/login');
+                }}
+                className="text-electric-blue hover:underline"
+              >
+                Sign in with different account
+              </button>
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">First Name</label>
@@ -164,15 +205,18 @@ export default function Signup() {
             {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
+        )}
 
-        <div className="mt-6 text-center">
-          <p className="text-gray-400">
-            Already have an account?{' '}
-            <a href="/login" className="text-electric-blue hover:underline">
-              Login
-            </a>
-          </p>
-        </div>
+        {!existingUser && (
+          <div className="mt-6 text-center">
+            <p className="text-gray-400">
+              Already have an account?{' '}
+              <a href="/login" className="text-electric-blue hover:underline">
+                Login
+              </a>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
