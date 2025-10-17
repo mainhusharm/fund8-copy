@@ -111,16 +111,28 @@ export default function ChallengeTypes() {
     }
   };
 
-  const handlePurchase = (tier: PricingTier) => {
-    navigate('/signup', {
-      state: {
-        returnTo: '/payment',
-        challengeCode: selectedChallenge?.challenge_code,
-        accountSize: tier.account_size,
-        price: tier.discount_price,
-        challengeName: selectedChallenge?.challenge_name
-      }
-    });
+  const handlePurchase = async (tier: PricingTier) => {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+      navigate('/payment', {
+        state: {
+          challengeCode: selectedChallenge?.challenge_code,
+          accountSize: tier.account_size,
+          price: tier.discount_price,
+          challengeName: selectedChallenge?.challenge_name
+        }
+      });
+    } else {
+      navigate('/signup', {
+        state: {
+          returnTo: '/payment',
+          accountSize: tier.account_size,
+          challengeType: selectedChallenge?.challenge_code,
+          originalPrice: tier.discount_price
+        }
+      });
+    }
   };
 
   if (loading) {

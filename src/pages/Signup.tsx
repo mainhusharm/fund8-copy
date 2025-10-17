@@ -31,7 +31,12 @@ export default function Signup() {
     if (result.success) {
       if (returnTo && accountSize && challengeType) {
         navigate(returnTo, {
-          state: { accountSize, challengeType, originalPrice }
+          state: {
+            challengeCode: challengeType,
+            accountSize: accountSize,
+            price: originalPrice,
+            challengeName: challengeType
+          }
         });
       } else {
         navigate('/challenge-types');
