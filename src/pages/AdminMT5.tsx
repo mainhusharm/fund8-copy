@@ -525,16 +525,44 @@ function CreateAccountModal({ users, onClose, onSuccess }: any) {
     setCreating(true);
 
     try {
-      const { error } = await supabase
-        .from('mt5_accounts')
-        .insert({
-          ...formData,
-          current_balance: formData.initial_balance,
-          status: 'active',
-          is_sent: false
-        });
+      // Find the user's pending challenge to update with credentials
+      const { data: pendingChallenges, error: fetchError } = await supabase
+        .from('user_challenges')
+        .select('id')
+        .eq('user_id', formData.user_id)
+        .is('trading_account_id', null)
+        .neq('status', 'pending_payment')
+        .order('purchase_date', { ascending: false })
+        .limit(1);
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
+
+      if (pendingChallenges && pendingChallenges.length > 0) {
+        // Update existing challenge with MT5 credentials
+        const { error: updateError } = await supabase
+          .from('user_challenges')
+          .update({
+            trading_account_id: formData.mt5_login,
+            status: 'active'
+          })
+          .eq('id', pendingChallenges[0].id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Create new challenge if none exists
+        const { error: insertError } = await supabase
+          .from('user_challenges')
+          .insert({
+            user_id: formData.user_id,
+            challenge_type_id: 'manual',
+            account_size: formData.account_size,
+            trading_account_id: formData.mt5_login,
+            status: 'active',
+            purchase_date: new Date().toISOString()
+          });
+
+        if (insertError) throw insertError;
+      }
 
       alert('MT5 account created successfully!');
       onSuccess();
