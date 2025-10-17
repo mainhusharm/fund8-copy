@@ -52,6 +52,12 @@ export default function Dashboard() {
     checkAuth();
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
+
   async function checkAuth() {
     try {
       const {
@@ -176,10 +182,6 @@ function OverviewSection({ user }: { user: any }) {
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   async function fetchData() {
     try {

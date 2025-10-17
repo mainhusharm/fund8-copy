@@ -156,15 +156,17 @@ export default function CryptoPayment() {
         }
 
         // Get challenge type ID
-        const { data: challengeTypeData } = await supabase
+        const { data: challengeTypeData, error: challengeTypeError } = await supabase
           .from('challenge_types')
           .select('id')
           .eq('challenge_code', challengeType)
           .maybeSingle();
 
+        console.log('Challenge type lookup:', { challengeType, challengeTypeData, challengeTypeError });
+
         // Create user challenge record
         if (challengeTypeData) {
-          await supabase
+          const { data: userChallenge, error: userChallengeError } = await supabase
             .from('user_challenges')
             .insert({
               user_id: user.id,
@@ -174,7 +176,17 @@ export default function CryptoPayment() {
               payment_id: payment?.id,
               discount_applied: appliedCoupon ? true : false,
               status: 'pending_credentials'
-            });
+            })
+            .select()
+            .maybeSingle();
+
+          console.log('User challenge creation:', { userChallenge, userChallengeError });
+
+          if (userChallengeError) {
+            console.error('Failed to create user challenge:', userChallengeError);
+          }
+        } else {
+          console.error('Challenge type not found for code:', challengeType);
         }
 
         setVerificationStatus('success');

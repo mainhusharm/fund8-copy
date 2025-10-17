@@ -46,6 +46,8 @@ export default function Signup() {
     setError('');
     setLoading(true);
 
+    console.log('Signup state:', { returnTo, accountSize, challengeType, originalPrice });
+
     const result = await signUp(
       formData.email,
       formData.password,
@@ -53,8 +55,11 @@ export default function Signup() {
       formData.lastName
     );
 
+    console.log('Signup result:', result);
+
     if (result.success) {
       if (returnTo && accountSize && challengeType && originalPrice) {
+        console.log('Navigating to payment with state');
         navigate(returnTo, {
           state: {
             accountSize: accountSize,
@@ -63,7 +68,8 @@ export default function Signup() {
           }
         });
       } else {
-        navigate('/challenge-types');
+        console.log('Missing state, going to challenge-types');
+        navigate('/dashboard');
       }
     } else {
       setError(result.error || 'Registration failed');
