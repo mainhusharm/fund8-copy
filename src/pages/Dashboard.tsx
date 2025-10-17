@@ -586,16 +586,27 @@ function AnalyticsSection({ user }: { user: any }) {
         return;
       }
 
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-      const response = await fetch(`${backendUrl}/api/analytics/mt5-data/${account.login}`);
-
-      if (response.ok) {
-        const data = await response.json();
-        setRealTimeData(data);
-      } else {
-        console.error('Failed to fetch MT5 data from backend');
-        setRealTimeData(null);
-      }
+      // Display account information from Supabase database
+      // Note: For live MT5 data, you need to set up MetaAPI integration via Supabase Edge Function
+      setRealTimeData({
+        balance: account.account_size || 0,
+        equity: account.current_balance || account.account_size || 0,
+        margin: '0.00',
+        freeMargin: (account.account_size * 0.9).toFixed(2),
+        marginLevel: '100.00',
+        openTrades: 0,
+        profit: '0.00',
+        profitPercentage: '0.00',
+        totalTrades: 0,
+        winRate: '0.00',
+        averageWin: '0.00',
+        averageLoss: '0.00',
+        profitFactor: '0.00',
+        sharpeRatio: '0.00',
+        maxDrawdown: '0.00',
+        lastUpdate: new Date().toISOString(),
+        isLiveData: false
+      });
     } catch (error) {
       console.error('Error fetching real-time data:', error);
       setRealTimeData(null);
@@ -623,9 +634,9 @@ function AnalyticsSection({ user }: { user: any }) {
             <p className="text-white/70">Real-time performance metrics from MT5</p>
           </div>
           {realTimeData && (
-            <div className="flex items-center space-x-2 text-sm text-neon-green bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full">
-              <Activity className="animate-pulse" size={16} />
-              <span>Live Data</span>
+            <div className={`flex items-center space-x-2 text-sm bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full ${realTimeData.isLiveData === false ? 'text-yellow-500' : 'text-neon-green'}`}>
+              <Activity className={realTimeData.isLiveData === false ? '' : 'animate-pulse'} size={16} />
+              <span>{realTimeData.isLiveData === false ? 'Static Data' : 'Live Data'}</span>
               <span className="text-white/50">Updated {new Date(realTimeData.lastUpdate).toLocaleTimeString()}</span>
             </div>
           )}
@@ -766,15 +777,18 @@ function AnalyticsSection({ user }: { user: any }) {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-electric-blue/10 to-neon-purple/10 rounded-xl p-6 border border-electric-blue/30">
+              <div className={`rounded-xl p-6 border ${realTimeData?.isLiveData === false ? 'bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30' : 'bg-gradient-to-r from-electric-blue/10 to-neon-purple/10 border-electric-blue/30'}`}>
                 <div className="flex items-start space-x-4">
-                  <Activity className="text-electric-blue mt-1" size={24} />
+                  <Activity className={`mt-1 ${realTimeData?.isLiveData === false ? 'text-yellow-500' : 'text-electric-blue'}`} size={24} />
                   <div>
-                    <h4 className="font-bold text-lg mb-2">Real-Time Data Integration</h4>
+                    <h4 className="font-bold text-lg mb-2">
+                      {realTimeData?.isLiveData === false ? 'Account Information' : 'Real-Time Data Integration'}
+                    </h4>
                     <p className="text-white/70 text-sm">
-                      This analytics dashboard displays real-time data from your MT5 trading account.
-                      Data is refreshed every 5 seconds to provide you with up-to-the-minute trading insights.
-                      Monitor your performance, risk metrics, and trading statistics in real-time.
+                      {realTimeData?.isLiveData === false
+                        ? 'Currently displaying static account information from the database. To enable real-time MT5 data integration, configure MetaAPI through a Supabase Edge Function.'
+                        : 'This analytics dashboard displays real-time data from your MT5 trading account. Data is refreshed every 5 seconds to provide you with up-to-the-minute trading insights.'
+                      }
                     </p>
                   </div>
                 </div>
