@@ -34,7 +34,7 @@ export default function Signup() {
           state: { accountSize, challengeType, originalPrice }
         });
       } else {
-        navigate('/dashboard');
+        navigate('/challenge-types');
       }
     } else {
       setError(result.error || 'Registration failed');
