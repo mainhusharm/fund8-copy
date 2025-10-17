@@ -36,49 +36,56 @@ export default function AdminMT5() {
 
   const loadData = async () => {
     try {
-      // Load MT5 accounts
-      const { data: accountsData, error: accountsError } = await supabase
-        .from('mt5_accounts')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Fetch user data
+      const { data: usersData, error: usersError } = await supabase.rpc('get_users_for_admin');
+      if (usersError) throw usersError;
 
-      if (accountsError) throw accountsError;
-
-      // Fetch user data separately
-      const { data: usersData } = await supabase.rpc('get_users_for_admin');
       const usersMap = new Map(usersData?.map((u: any) => [u.id, u]) || []);
 
-      // Fetch ALL challenges (including pending)
-      const { data: challengesData } = await supabase
-        .from('challenges')
+      // Fetch ALL user challenges
+      const { data: challengesData, error: challengesError } = await supabase
+        .from('user_challenges')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('purchase_date', { ascending: false });
 
-      // Separate pending challenges (no credentials yet)
-      const pending = challengesData?.filter(c => c.phase === 'pending_credentials').map((c: any) => {
+      if (challengesError) throw challengesError;
+
+      // Separate pending challenges (no trading_account_id yet)
+      const pending = challengesData?.filter(c => !c.trading_account_id && c.status !== 'pending_payment').map((c: any) => {
         const user = usersMap.get(c.user_id);
         return {
-          ...c,
+          id: c.id,
+          user_id: c.user_id,
           user_email: user?.email || 'Unknown',
-          user_name: user?.full_name || 'N/A'
+          user_name: user?.full_name || 'N/A',
+          account_size: c.account_size,
+          challenge_type: c.challenge_type_id,
+          status: c.status,
+          phase: 'pending_credentials',
+          created_at: c.purchase_date
         };
       }) || [];
 
       setPendingChallenges(pending);
 
-      // Create a map of login_id -> unique_user_id for existing accounts
-      const loginToUserIdMap = new Map(
-        challengesData?.map((c: any) => [c.login_id, c.unique_user_id]) || []
-      );
-
-      const formattedAccounts = accountsData?.map((acc: any) => {
-        const user = usersMap.get(acc.user_id);
-        const uniqueUserId = loginToUserIdMap.get(acc.mt5_login);
+      // Format challenges as "accounts" for display
+      const formattedAccounts = challengesData?.filter(c => c.trading_account_id).map((c: any) => {
+        const user = usersMap.get(c.user_id);
         return {
-          ...acc,
+          account_id: c.id,
+          user_id: c.user_id,
+          mt5_login: c.trading_account_id || 'Not Assigned',
+          mt5_password: 'Hidden',
+          mt5_server: 'MetaQuotes-Demo',
+          account_type: 'Standard',
+          account_size: c.account_size,
+          current_balance: 0,
+          status: c.status,
+          is_sent: true,
+          created_at: c.purchase_date,
           user_email: user?.email || 'Unknown',
           user_name: user?.full_name || 'N/A',
-          unique_user_id: uniqueUserId || 'N/A'
+          unique_user_id: c.trading_account_id
         };
       }) || [];
 
