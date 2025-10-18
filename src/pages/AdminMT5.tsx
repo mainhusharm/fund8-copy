@@ -177,10 +177,10 @@ export default function AdminMT5() {
             />
           )}
 
-          {activeTab === 'certificates' && <CertificatesTab />}
-          {activeTab === 'competitions' && <CompetitionsTab />}
-          {activeTab === 'profiles' && <UserProfilesTab />}
-          {activeTab === 'breach' && <ManualBreachTab />}
+          {activeTab === 'certificates' && <CertificatesTab users={users} />}
+          {activeTab === 'competitions' && <CompetitionsTab users={users} />}
+          {activeTab === 'profiles' && <UserProfilesTab users={users} />}
+          {activeTab === 'breach' && <ManualBreachTab users={users} accounts={accounts} />}
         </div>
       </div>
 
@@ -782,34 +782,23 @@ function generatePassword() {
   return password;
 }
 
-function CertificatesTab() {
+function CertificatesTab({ users }: { users: any[] }) {
   const [searchEmail, setSearchEmail] = useState('');
   const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
 
-  const searchUsers = async (email: string) => {
+  const searchUsers = (email: string) => {
     if (email.length < 3) {
       setSearchResults([]);
       return;
     }
 
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.rpc('get_users_for_admin');
-      if (error) throw error;
+    const filtered = users?.filter((u: any) =>
+      u.email.toLowerCase().includes(email.toLowerCase()) ||
+      u.full_name?.toLowerCase().includes(email.toLowerCase())
+    ) || [];
 
-      const filtered = data?.filter((u: any) =>
-        u.email.toLowerCase().includes(email.toLowerCase()) ||
-        u.full_name?.toLowerCase().includes(email.toLowerCase())
-      ) || [];
-
-      setSearchResults(filtered.slice(0, 10));
-    } catch (error) {
-      console.error('Error searching users:', error);
-    } finally {
-      setLoading(false);
-    }
+    setSearchResults(filtered.slice(0, 10));
   };
 
   return (
@@ -957,7 +946,7 @@ function CertificateCard({ icon, title, description, userId }: any) {
   );
 }
 
-function CompetitionsTab() {
+function CompetitionsTab({ users }: { users: any[] }) {
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
@@ -983,34 +972,23 @@ function CompetitionsTab() {
   );
 }
 
-function UserProfilesTab() {
+function UserProfilesTab({ users }: { users: any[] }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
 
-  const searchUsers = async (query: string) => {
+  const searchUsers = (query: string) => {
     if (query.length < 3) {
       setSearchResults([]);
       return;
     }
 
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.rpc('get_users_for_admin');
-      if (error) throw error;
+    const filtered = users?.filter((u: any) =>
+      u.email.toLowerCase().includes(query.toLowerCase()) ||
+      u.full_name?.toLowerCase().includes(query.toLowerCase())
+    ) || [];
 
-      const filtered = data?.filter((u: any) =>
-        u.email.toLowerCase().includes(query.toLowerCase()) ||
-        u.full_name?.toLowerCase().includes(query.toLowerCase())
-      ) || [];
-
-      setSearchResults(filtered.slice(0, 10));
-    } catch (error) {
-      console.error('Error searching users:', error);
-    } finally {
-      setLoading(false);
-    }
+    setSearchResults(filtered.slice(0, 10));
   };
 
   return (
@@ -1091,44 +1069,24 @@ function UserProfilesTab() {
   );
 }
 
-function ManualBreachTab() {
+function ManualBreachTab({ users, accounts }: { users: any[]; accounts: any[] }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<any>(null);
 
-  const searchAccounts = async (query: string) => {
+  const searchAccounts = (query: string) => {
     if (query.length < 3) {
       setSearchResults([]);
       return;
     }
 
-    try {
-      const { data: usersData } = await supabase.rpc('get_users_for_admin');
-      const { data: challenges } = await supabase
-        .from('user_challenges')
-        .select('*')
-        .not('trading_account_id', 'is', null)
-        .order('purchase_date', { ascending: false });
+    const filtered = accounts?.filter((acc: any) =>
+      acc.mt5_login?.toLowerCase().includes(query.toLowerCase()) ||
+      acc.user_email?.toLowerCase().includes(query.toLowerCase()) ||
+      acc.unique_user_id?.toLowerCase().includes(query.toLowerCase())
+    ) || [];
 
-      const usersMap = new Map(usersData?.map((u: any) => [u.id, u]) || []);
-
-      const filtered = challenges?.filter((c: any) => {
-        const user = usersMap.get(c.user_id);
-        return c.trading_account_id?.toLowerCase().includes(query.toLowerCase()) ||
-               user?.email?.toLowerCase().includes(query.toLowerCase());
-      }).map((c: any) => {
-        const user = usersMap.get(c.user_id);
-        return {
-          ...c,
-          user_email: user?.email || 'Unknown',
-          user_name: user?.full_name || 'N/A'
-        };
-      }) || [];
-
-      setSearchResults(filtered.slice(0, 10));
-    } catch (error) {
-      console.error('Error searching accounts:', error);
-    }
+    setSearchResults(filtered.slice(0, 10));
   };
 
   return (
@@ -1160,17 +1118,17 @@ function ManualBreachTab() {
             <div className="absolute top-full left-0 right-0 mt-2 bg-deep-space border border-white/20 rounded-lg max-h-64 overflow-y-auto z-10">
               {searchResults.map((account: any) => (
                 <button
-                  key={account.id}
+                  key={account.account_id}
                   onClick={() => {
                     setSelectedAccount(account);
-                    setSearchTerm(`${account.user_email} - ${account.trading_account_id}`);
+                    setSearchTerm(`${account.user_email} - ${account.mt5_login}`);
                     setSearchResults([]);
                   }}
                   className="w-full text-left px-4 py-3 hover:bg-white/10 transition-all border-b border-white/5 last:border-0"
                 >
                   <div className="font-semibold">{account.user_email}</div>
                   <div className="text-sm text-white/60">
-                    MT5: {account.trading_account_id} - ${parseFloat(account.account_size).toLocaleString()} - {account.challenge_type_id}
+                    MT5: {account.mt5_login} - ${parseFloat(account.account_size).toLocaleString()} - {account.account_type}
                   </div>
                 </button>
               ))}
@@ -1191,7 +1149,7 @@ function ManualBreachTab() {
               </div>
               <div>
                 <div className="text-white/60 text-sm">MT5 Login</div>
-                <div className="font-bold">{selectedAccount.trading_account_id}</div>
+                <div className="font-bold">{selectedAccount.mt5_login}</div>
               </div>
               <div>
                 <div className="text-white/60 text-sm">Account Size</div>

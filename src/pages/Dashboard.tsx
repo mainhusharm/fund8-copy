@@ -1567,6 +1567,34 @@ function DownloadsSection() {
     }
   }
 
+  async function handleDownload(doc: any) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const certificateHTML = generateCertificateHTML(doc, user);
+      const blob = new Blob([certificateHTML], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${doc.document_type}_${doc.document_number || Date.now()}.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      await supabase
+        .from('downloads')
+        .update({ download_count: (doc.download_count || 0) + 1 })
+        .eq('id', doc.id);
+
+      fetchDownloads();
+    } catch (error) {
+      console.error('Error downloading:', error);
+      alert('Failed to download document');
+    }
+  }
+
   const documentTypes = [
     { value: 'all', label: 'All Documents' },
     { value: 'certificate', label: 'Certificates' },
@@ -1644,7 +1672,10 @@ function DownloadsSection() {
               </div>
 
               <div className="flex gap-2">
-                <button className="flex-1 px-4 py-2 bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg font-semibold hover:scale-105 transition-transform flex items-center justify-center gap-2">
+                <button
+                  onClick={() => handleDownload(doc)}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg font-semibold hover:scale-105 transition-transform flex items-center justify-center gap-2"
+                >
                   <Download size={16} />
                   Download
                 </button>
@@ -1707,6 +1738,216 @@ function DownloadsSection() {
       )}
     </div>
   );
+}
+
+function generateCertificateHTML(doc: any, user: any) {
+  const issueDate = new Date(doc.issue_date || doc.created_at).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${doc.title || 'Fund8r Certificate'}</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Georgia', serif;
+      background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .certificate {
+      background: white;
+      max-width: 1000px;
+      width: 100%;
+      padding: 60px;
+      border: 20px solid #0066FF;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+    .certificate::before {
+      content: '';
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      border: 2px solid #7B2EFF;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .logo {
+      font-size: 48px;
+      font-weight: bold;
+      background: linear-gradient(135deg, #0066FF, #7B2EFF);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #666;
+      font-size: 18px;
+      font-style: italic;
+    }
+    .title {
+      font-size: 42px;
+      color: #0066FF;
+      text-align: center;
+      margin: 40px 0;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+    }
+    .content {
+      text-align: center;
+      font-size: 20px;
+      line-height: 1.8;
+      color: #333;
+      margin: 30px 0;
+    }
+    .recipient {
+      font-size: 36px;
+      font-weight: bold;
+      color: #7B2EFF;
+      margin: 20px 0;
+      text-decoration: underline;
+    }
+    .details {
+      margin: 40px 0;
+      padding: 20px;
+      background: #f8f9fa;
+      border-left: 4px solid #0066FF;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    .detail-label {
+      font-weight: bold;
+      color: #666;
+    }
+    .detail-value {
+      color: #333;
+    }
+    .signature-section {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 60px;
+      padding-top: 40px;
+    }
+    .signature {
+      text-align: center;
+    }
+    .signature-line {
+      width: 250px;
+      height: 2px;
+      background: #333;
+      margin: 20px auto 10px;
+    }
+    .signature-name {
+      font-weight: bold;
+      font-size: 18px;
+      color: #333;
+    }
+    .signature-title {
+      color: #666;
+      font-size: 14px;
+    }
+    .seal {
+      position: absolute;
+      bottom: 40px;
+      right: 40px;
+      width: 100px;
+      height: 100px;
+      border: 3px solid #0066FF;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #0066FF;
+      font-size: 12px;
+      text-align: center;
+      transform: rotate(-15deg);
+    }
+    @media print {
+      body {
+        background: white;
+      }
+      .certificate {
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="certificate">
+    <div class="header">
+      <div class="logo">Fund8r</div>
+      <div class="subtitle">Premier Proprietary Trading Firm</div>
+    </div>
+
+    <div class="title">Certificate of ${doc.document_type === 'certificate' ? 'Achievement' : doc.document_type}</div>
+
+    <div class="content">
+      <p>This certifies that</p>
+      <div class="recipient">${user.email}</div>
+      <p>${doc.description || 'has successfully completed the requirements'}</p>
+    </div>
+
+    <div class="details">
+      <div class="detail-row">
+        <span class="detail-label">Document Number:</span>
+        <span class="detail-value">${doc.document_number || 'N/A'}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Issue Date:</span>
+        <span class="detail-value">${issueDate}</span>
+      </div>
+      ${doc.account_size ? `
+      <div class="detail-row">
+        <span class="detail-label">Account Size:</span>
+        <span class="detail-value">$${parseFloat(doc.account_size).toLocaleString()}</span>
+      </div>
+      ` : ''}
+    </div>
+
+    <div class="signature-section">
+      <div class="signature">
+        <div class="signature-line"></div>
+        <div class="signature-name">Michael Johnson</div>
+        <div class="signature-title">Chief Executive Officer</div>
+      </div>
+      <div class="signature">
+        <div class="signature-line"></div>
+        <div class="signature-name">Sarah Williams</div>
+        <div class="signature-title">Director of Operations</div>
+      </div>
+    </div>
+
+    <div class="seal">
+      OFFICIAL<br>SEAL
+    </div>
+  </div>
+</body>
+</html>
+  `;
 }
 
 function FAQSection() {
