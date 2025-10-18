@@ -907,110 +907,93 @@ function CertificatesSection({ user }: { user: any }) {
 }
 
 function ContractsSection({ user }: { user: any }) {
+  const [contracts, setContracts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchContracts();
+  }, []);
+
+  async function fetchContracts() {
+    try {
+      const { data, error } = await supabase
+        .from('contracts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('signed_at', { ascending: false });
+
+      if (error) throw error;
+      setContracts(data || []);
+    } catch (error) {
+      console.error('Error fetching contracts:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div>
       <h1 className="text-4xl font-bold mb-2">
         <GradientText>Contracts & Agreements</GradientText>
       </h1>
-      <p className="text-white/70 mb-8">Review your trading contracts and legal agreements</p>
+      <p className="text-white/70 mb-8">Your signed contracts and legal agreements</p>
 
-      <div className="space-y-6">
-        <div className="bg-white/5 rounded-xl p-6 border border-white/10">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h3 className="text-xl font-bold mb-2">FluxFunded Master Service Agreement</h3>
-              <p className="text-white/60 text-sm">Effective Date: {new Date().toLocaleDateString()}</p>
+      {loading ? (
+        <div className="text-center py-12 text-white/60">Loading contracts...</div>
+      ) : contracts.length > 0 ? (
+        <div className="space-y-6">
+          {contracts.map((contract) => (
+            <div key={contract.id} className="bg-white/5 rounded-xl p-6 border border-white/10">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="text-xl font-bold mb-2">Trading Challenge Agreement</h3>
+                  <p className="text-white/60 text-sm">Signed: {new Date(contract.signed_at).toLocaleString()}</p>
+                  <p className="text-white/50 text-xs mt-1">Contract ID: {contract.id.slice(0, 8)}...</p>
+                </div>
+                <span className={`px-4 py-2 rounded-lg text-sm font-semibold ${
+                  contract.status === 'signed' ? 'bg-neon-green/20 text-neon-green' :
+                  contract.status === 'voided' ? 'bg-red-500/20 text-red-400' :
+                  'bg-yellow-500/20 text-yellow-400'
+                }`}>
+                  {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
+                </span>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4 mb-4">
+                <div className="bg-white/5 rounded-lg p-4">
+                  <div className="text-sm text-white/60 mb-1">Full Name</div>
+                  <div className="font-semibold">{contract.full_name}</div>
+                </div>
+                <div className="bg-white/5 rounded-lg p-4">
+                  <div className="text-sm text-white/60 mb-1">Email</div>
+                  <div className="font-semibold">{contract.email}</div>
+                </div>
+                <div className="bg-white/5 rounded-lg p-4">
+                  <div className="text-sm text-white/60 mb-1">Signed From IP</div>
+                  <div className="font-mono text-sm">{contract.signature_ip_address}</div>
+                </div>
+                <div className="bg-white/5 rounded-lg p-4">
+                  <div className="text-sm text-white/60 mb-1">Electronic Signature</div>
+                  <div className="font-semibold italic">{contract.electronic_signature}</div>
+                </div>
+              </div>
+
+              {contract.pdf_url && (
+                <button className="px-6 py-3 bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg font-semibold hover:scale-105 transition-transform flex items-center gap-2">
+                  <Download size={16} />
+                  Download Contract PDF
+                </button>
+              )}
             </div>
-            <span className="px-4 py-2 bg-neon-green/20 text-neon-green rounded-lg text-sm font-semibold">
-              Active
-            </span>
-          </div>
-
-          <div className="bg-white/5 rounded-lg p-6 mb-4 text-sm text-white/80 space-y-4 max-h-96 overflow-y-auto">
-            <h4 className="font-bold text-lg text-white">Master Service Agreement</h4>
-
-            <section>
-              <h5 className="font-bold text-white mb-2">1. Services Provided</h5>
-              <p>
-                FluxFunded ("Company") provides proprietary trading evaluation and funding services to qualified traders ("Trader"). The Company operates a simulated trading environment for evaluation purposes.
-              </p>
-            </section>
-
-            <section>
-              <h5 className="font-bold text-white mb-2">2. Evaluation Process</h5>
-              <p>
-                The Trader agrees to participate in a multi-phase evaluation process as defined by the selected challenge type. Each phase has specific profit targets, drawdown limits, and trading rules that must be met.
-              </p>
-            </section>
-
-            <section>
-              <h5 className="font-bold text-white mb-2">3. Trading Rules & Restrictions</h5>
-              <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>Maximum daily loss limits must be observed at all times</li>
-                <li>Maximum drawdown limits are calculated from initial or highest balance</li>
-                <li>Minimum trading days requirements must be met before payout eligibility</li>
-                <li>Copy trading from external sources is prohibited</li>
-                <li>Hedging between multiple accounts is prohibited</li>
-                <li>Arbitrage and high-frequency trading strategies are not permitted</li>
-                <li>All trades must be executed in good faith with proper risk management</li>
-              </ul>
-            </section>
-
-            <section>
-              <h5 className="font-bold text-white mb-2">4. Profit Split & Payouts</h5>
-              <p>
-                Upon successful completion of the evaluation and transition to funded status, the Trader is entitled to their designated profit split percentage as specified in their challenge type. Payouts are processed bi-weekly upon request, subject to meeting minimum payout thresholds and maintaining account in good standing.
-              </p>
-            </section>
-
-            <section>
-              <h5 className="font-bold text-white mb-2">5. Scaling & Account Growth</h5>
-              <p>
-                Qualified traders may be eligible for account scaling based on consistent performance, adherence to rules, and profitability over time. Scaling decisions are made at the sole discretion of the Company.
-              </p>
-            </section>
-
-            <section>
-              <h5 className="font-bold text-white mb-2">6. Risk Disclosure</h5>
-              <p className="font-bold text-yellow-400">
-                TRADING INVOLVES SUBSTANTIAL RISK OF LOSS. The Company provides simulated trading environments for evaluation purposes. Past performance is not indicative of future results. Traders should never risk more than they can afford to lose.
-              </p>
-            </section>
-
-            <section>
-              <h5 className="font-bold text-white mb-2">7. Termination</h5>
-              <p>
-                The Company reserves the right to terminate any account that violates trading rules, engages in prohibited practices, or acts in bad faith. Evaluation fees are non-refundable except as required by law.
-              </p>
-            </section>
-
-            <section>
-              <h5 className="font-bold text-white mb-2">8. Limitation of Liability</h5>
-              <p>
-                The Company's liability is limited to the evaluation fees paid by the Trader. The Company is not liable for any direct, indirect, incidental, or consequential damages arising from the use of its services.
-              </p>
-            </section>
-
-            <section>
-              <h5 className="font-bold text-white mb-2">9. Data & Privacy</h5>
-              <p>
-                The Company collects and processes trading data and personal information in accordance with its Privacy Policy. All trading activity is monitored for compliance and risk management purposes.
-              </p>
-            </section>
-
-            <section>
-              <h5 className="font-bold text-white mb-2">10. Governing Law</h5>
-              <p>
-                This Agreement is governed by applicable laws. Any disputes shall be resolved through binding arbitration.
-              </p>
-            </section>
-          </div>
-
-          <button className="px-6 py-3 bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg font-semibold hover:scale-105 transition-transform">
-            Download PDF
-          </button>
+          ))}
         </div>
-      </div>
+      ) : (
+        <div className="bg-white/5 rounded-xl p-12 border border-white/10 text-center">
+          <FileText size={64} className="mx-auto mb-4 text-white/30" />
+          <h3 className="text-2xl font-bold mb-2">No Contracts Yet</h3>
+          <p className="text-white/60">You haven't signed any contracts yet. Complete a challenge purchase to sign your first contract.</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -1131,19 +1114,159 @@ function LeaderboardSection({ user }: { user: any }) {
 }
 
 function BillingSection({ user }: { user: any }) {
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'purchase' | 'payout' | 'refund'>('all');
+
+  useEffect(() => {
+    fetchTransactions();
+  }, [filter]);
+
+  async function fetchTransactions() {
+    try {
+      let query = supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (filter !== 'all') {
+        const typeMap = {
+          purchase: 'challenge_purchase',
+          payout: 'payout',
+          refund: 'refund'
+        };
+        query = query.eq('transaction_type', typeMap[filter]);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      setTransactions(data || []);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const totals = transactions.reduce((acc, txn) => {
+    if (txn.transaction_type === 'challenge_purchase') {
+      acc.spent += txn.amount || 0;
+    } else if (txn.transaction_type === 'payout') {
+      acc.earned += txn.amount || 0;
+    }
+    return acc;
+  }, { spent: 0, earned: 0 });
+
   return (
     <div>
       <h1 className="text-4xl font-bold mb-2">
-        <GradientText>Billing</GradientText>
+        <GradientText>Billing & Transactions</GradientText>
       </h1>
-      <p className="text-white/70 mb-8">Manage your subscription and payment history</p>
+      <p className="text-white/70 mb-8">View your complete payment history and invoices</p>
 
-      <div className="bg-white/5 rounded-xl p-6 border border-white/10">
-        <h3 className="text-xl font-bold mb-4">Payment History</h3>
-        <div className="text-center py-8 text-white/60">
-          <p>No payment history available</p>
+      <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-gradient-to-br from-red-500/20 to-orange-500/20 rounded-xl p-6 border border-white/10">
+          <div className="text-sm text-white/60 mb-2">Total Spent</div>
+          <div className="text-3xl font-bold mb-2">${totals.spent.toLocaleString()}</div>
+          <div className="text-sm text-white/60">Challenge Purchases</div>
+        </div>
+
+        <div className="bg-gradient-to-br from-neon-green/20 to-electric-blue/20 rounded-xl p-6 border border-white/10">
+          <div className="text-sm text-white/60 mb-2">Total Earned</div>
+          <div className="text-3xl font-bold text-neon-green mb-2">${totals.earned.toLocaleString()}</div>
+          <div className="text-sm text-white/60">Payouts Received</div>
+        </div>
+
+        <div className="bg-gradient-to-br from-electric-blue/20 to-neon-purple/20 rounded-xl p-6 border border-white/10">
+          <div className="text-sm text-white/60 mb-2">Total Transactions</div>
+          <div className="text-3xl font-bold mb-2">{transactions.length}</div>
+          <div className="text-sm text-white/60">All Time</div>
         </div>
       </div>
+
+      <div className="mb-6 flex gap-2">
+        {['all', 'purchase', 'payout', 'refund'].map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f as any)}
+            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+              filter === f
+                ? 'bg-gradient-to-r from-electric-blue to-neon-purple'
+                : 'bg-white/10 hover:bg-white/20'
+            }`}
+          >
+            {f.charAt(0).toUpperCase() + f.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="text-center py-12 text-white/60">Loading transactions...</div>
+      ) : transactions.length > 0 ? (
+        <div className="bg-white/5 rounded-xl border border-white/10 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gradient-to-r from-electric-blue to-neon-purple">
+                <tr>
+                  <th className="px-6 py-4 text-left">Transaction ID</th>
+                  <th className="px-6 py-4 text-left">Type</th>
+                  <th className="px-6 py-4 text-left">Description</th>
+                  <th className="px-6 py-4 text-right">Amount</th>
+                  <th className="px-6 py-4 text-left">Status</th>
+                  <th className="px-6 py-4 text-left">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.map((txn) => (
+                  <tr key={txn.id} className="border-t border-white/10 hover:bg-white/5">
+                    <td className="px-6 py-4 font-mono text-sm text-electric-blue">
+                      {txn.transaction_id || txn.id.slice(0, 8)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${
+                        txn.transaction_type === 'challenge_purchase' ? 'bg-neon-purple/20 text-neon-purple' :
+                        txn.transaction_type === 'payout' ? 'bg-neon-green/20 text-neon-green' :
+                        'bg-orange-500/20 text-orange-400'
+                      }`}>
+                        {txn.transaction_type === 'challenge_purchase' ? 'Purchase' :
+                         txn.transaction_type === 'payout' ? 'Payout' : 'Refund'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {txn.transaction_type === 'challenge_purchase' ? 'Challenge Purchase' :
+                       txn.transaction_type === 'payout' ? 'Trading Profit Payout' : 'Refund'}
+                    </td>
+                    <td className={`px-6 py-4 text-right font-bold text-lg ${
+                      txn.transaction_type === 'payout' ? 'text-neon-green' : 'text-white'
+                    }`}>
+                      {txn.transaction_type === 'payout' ? '+' : ''}${(txn.amount || 0).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${
+                        txn.payment_status === 'completed' ? 'bg-neon-green/20 text-neon-green' :
+                        txn.payment_status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                        'bg-red-500/20 text-red-400'
+                      }`}>
+                        {txn.payment_status || 'Completed'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-white/70">
+                      {new Date(txn.created_at).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white/5 rounded-xl p-12 border border-white/10 text-center">
+          <CreditCard size={64} className="mx-auto mb-4 text-white/30" />
+          <h3 className="text-2xl font-bold mb-2">No Transactions Yet</h3>
+          <p className="text-white/60">Your transaction history will appear here once you make a purchase.</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -1181,51 +1304,177 @@ function CalendarSection() {
 }
 
 function DownloadsSection() {
+  const [downloads, setDownloads] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<string>('all');
+
+  useEffect(() => {
+    fetchDownloads();
+  }, [filter]);
+
+  async function fetchDownloads() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      let query = supabase
+        .from('downloads')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (filter !== 'all') {
+        query = query.eq('document_type', filter);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      setDownloads(data || []);
+    } catch (error) {
+      console.error('Error fetching downloads:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const documentTypes = [
+    { value: 'all', label: 'All Documents' },
+    { value: 'certificate', label: 'Certificates' },
+    { value: 'contract', label: 'Contracts' },
+    { value: 'invoice', label: 'Invoices' },
+    { value: 'receipt', label: 'Receipts' },
+  ];
+
+  const getDocumentIcon = (type: string) => {
+    switch (type) {
+      case 'certificate': return '🏆';
+      case 'contract': return '📜';
+      case 'invoice': return '🧾';
+      case 'receipt': return '💰';
+      default: return '📄';
+    }
+  };
+
   return (
     <div>
       <h1 className="text-4xl font-bold mb-2">
-        <GradientText>Downloads</GradientText>
+        <GradientText>Downloads & Certificates</GradientText>
       </h1>
-      <p className="text-white/70 mb-8">Download trading platforms and resources</p>
+      <p className="text-white/70 mb-8">Your certificates, receipts, and important documents</p>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        <div className="bg-white/5 rounded-xl p-6 border border-white/10 text-center">
-          <div className="text-6xl mb-4">💻</div>
-          <h3 className="text-xl font-bold mb-2">MetaTrader 5</h3>
-          <p className="text-white/60 text-sm mb-4">Windows Desktop</p>
-          <a
-            href="https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block px-6 py-2 bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg font-semibold hover:scale-105 transition-transform"
+      <div className="mb-6 flex gap-2 flex-wrap">
+        {documentTypes.map((type) => (
+          <button
+            key={type.value}
+            onClick={() => setFilter(type.value)}
+            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+              filter === type.value
+                ? 'bg-gradient-to-r from-electric-blue to-neon-purple'
+                : 'bg-white/10 hover:bg-white/20'
+            }`}
           >
-            Download
-          </a>
-        </div>
-
-        <div className="bg-white/5 rounded-xl p-6 border border-white/10 text-center">
-          <div className="text-6xl mb-4">📱</div>
-          <h3 className="text-xl font-bold mb-2">MT5 Mobile</h3>
-          <p className="text-white/60 text-sm mb-4">iOS & Android</p>
-          <a
-            href="https://www.metatrader5.com/en/mobile-trading"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block px-6 py-2 bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg font-semibold hover:scale-105 transition-transform"
-          >
-            Get App
-          </a>
-        </div>
-
-        <div className="bg-white/5 rounded-xl p-6 border border-white/10 text-center">
-          <div className="text-6xl mb-4">📚</div>
-          <h3 className="text-xl font-bold mb-2">Trading Guide</h3>
-          <p className="text-white/60 text-sm mb-4">PDF Documentation</p>
-          <button className="px-6 py-2 bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg font-semibold hover:scale-105 transition-transform">
-            Download
+            {type.label}
           </button>
-        </div>
+        ))}
       </div>
+
+      {loading ? (
+        <div className="text-center py-12 text-white/60">Loading documents...</div>
+      ) : downloads.length > 0 ? (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {downloads.map((doc) => (
+            <div
+              key={doc.id}
+              className="bg-gradient-to-br from-white/5 to-white/10 rounded-xl p-6 border border-white/10 hover:border-electric-blue/50 transition-all hover:scale-105"
+            >
+              <div className="text-6xl mb-4 text-center">{getDocumentIcon(doc.document_type)}</div>
+              <h3 className="text-xl font-bold mb-2 text-center">{doc.title || 'Document'}</h3>
+              <p className="text-white/60 text-sm mb-4 text-center">
+                {doc.description || doc.document_type}
+              </p>
+
+              {doc.document_number && (
+                <div className="bg-white/5 rounded-lg p-3 mb-4">
+                  <div className="text-xs text-white/60">Document Number</div>
+                  <div className="font-mono text-sm">{doc.document_number}</div>
+                </div>
+              )}
+
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-white/60">Issue Date</span>
+                  <span>{new Date(doc.issue_date || doc.created_at).toLocaleDateString()}</span>
+                </div>
+                {doc.download_count > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/60">Downloads</span>
+                    <span>{doc.download_count}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <button className="flex-1 px-4 py-2 bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg font-semibold hover:scale-105 transition-transform flex items-center justify-center gap-2">
+                  <Download size={16} />
+                  Download
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-8">
+          <div className="bg-white/5 rounded-xl p-12 border border-white/10 text-center">
+            <Award size={64} className="mx-auto mb-4 text-white/30" />
+            <h3 className="text-2xl font-bold mb-2">No Documents Yet</h3>
+            <p className="text-white/60 mb-6">
+              Your certificates and documents will appear here once generated.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Download Trading Platforms</h2>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10 text-center">
+                <div className="text-6xl mb-4">💻</div>
+                <h3 className="text-xl font-bold mb-2">MetaTrader 5</h3>
+                <p className="text-white/60 text-sm mb-4">Windows Desktop</p>
+                <a
+                  href="https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block px-6 py-2 bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg font-semibold hover:scale-105 transition-transform"
+                >
+                  Download
+                </a>
+              </div>
+
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10 text-center">
+                <div className="text-6xl mb-4">📱</div>
+                <h3 className="text-xl font-bold mb-2">MT5 Mobile</h3>
+                <p className="text-white/60 text-sm mb-4">iOS & Android</p>
+                <a
+                  href="https://www.metatrader5.com/en/mobile-trading"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block px-6 py-2 bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg font-semibold hover:scale-105 transition-transform"
+                >
+                  Get App
+                </a>
+              </div>
+
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10 text-center">
+                <div className="text-6xl mb-4">📚</div>
+                <h3 className="text-xl font-bold mb-2">Trading Guide</h3>
+                <p className="text-white/60 text-sm mb-4">PDF Documentation</p>
+                <button className="px-6 py-2 bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg font-semibold hover:scale-105 transition-transform">
+                  Download
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
