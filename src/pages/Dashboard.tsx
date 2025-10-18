@@ -916,17 +916,39 @@ function ContractsSection({ user }: { user: any }) {
 
   async function fetchContracts() {
     try {
-      const { data, error } = await supabase
+      const { data: challenges, error: challengesError } = await supabase
         .from('user_challenges')
-        .select('*, challenge_type:challenge_types(challenge_name)')
+        .select('*')
         .eq('user_id', user.id)
         .eq('contract_signed', true)
         .order('purchase_date', { ascending: false });
 
-      if (error) throw error;
-      setContracts(data || []);
+      if (challengesError) throw challengesError;
+
+      // Get challenge types separately
+      const { data: challengeTypes, error: typesError } = await supabase
+        .from('challenge_types')
+        .select('*');
+
+      if (typesError) throw typesError;
+
+      const typesMap = new Map(challengeTypes?.map((t: any) => [t.id, t]) || []);
+
+      // Merge challenge type data
+      const enrichedContracts = challenges?.map(challenge => {
+        const challengeType = typesMap.get(challenge.challenge_type_id);
+        return {
+          ...challenge,
+          challenge_type: {
+            challenge_name: challengeType?.challenge_name || 'Unknown Challenge'
+          }
+        };
+      }) || [];
+
+      setContracts(enrichedContracts);
     } catch (error) {
       console.error('Error fetching contracts:', error);
+      setContracts([]);
     } finally {
       setLoading(false);
     }

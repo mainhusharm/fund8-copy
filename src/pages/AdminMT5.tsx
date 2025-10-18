@@ -446,17 +446,37 @@ function CreateAccountModal({ users, onClose, onSuccess }: any) {
 
   async function loadPendingChallenges() {
     try {
-      const { data: challenges, error } = await supabase
+      const { data: challenges, error: challengesError } = await supabase
         .from('user_challenges')
-        .select('*, users:user_id(email, full_name)')
+        .select('*')
         .is('trading_account_id', null)
         .neq('status', 'pending_payment')
         .order('purchase_date', { ascending: false });
 
-      if (error) throw error;
-      setPendingChallenges(challenges || []);
+      if (challengesError) throw challengesError;
+
+      // Get user data separately
+      const { data: usersData, error: usersError } = await supabase.rpc('get_users_for_admin');
+      if (usersError) throw usersError;
+
+      const usersMap = new Map(usersData?.map((u: any) => [u.id, u]) || []);
+
+      // Merge user data with challenges
+      const enrichedChallenges = challenges?.map(challenge => {
+        const user = usersMap.get(challenge.user_id);
+        return {
+          ...challenge,
+          users: {
+            email: user?.email || 'Unknown',
+            full_name: user?.full_name || 'N/A'
+          }
+        };
+      }) || [];
+
+      setPendingChallenges(enrichedChallenges);
     } catch (error) {
       console.error('Error loading pending challenges:', error);
+      setPendingChallenges([]);
     } finally {
       setLoading(false);
     }
