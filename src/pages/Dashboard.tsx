@@ -32,6 +32,7 @@ import AccountStatusBadge from '../components/dashboard/AccountStatusBadge';
 import EnhancedSettings from '../components/dashboard/EnhancedSettings';
 import Analytics3DBackground from '../components/dashboard/Analytics3DBackground';
 import AccountCard from '../components/dashboard/AccountCard';
+import { generateContractText } from '../config/contractText';
 
 type Section =
   | 'overview'
@@ -272,9 +273,45 @@ function OverviewSection({ user }: { user: any }) {
     if (!unsignedChallenge) return;
 
     try {
+      const contractText = generateContractText({
+        fullName: user.user_metadata?.full_name || user.email || 'Trader',
+        email: user.email || '',
+        country: 'N/A',
+        challengeType: unsignedChallenge.challenge_type?.challenge_name || 'Standard',
+        accountSize: unsignedChallenge.account_size,
+        purchasePrice: unsignedChallenge.amount_paid || 0,
+        profitTarget: 10,
+        maxDailyLoss: 5,
+        maxTotalLoss: 10
+      });
+
+      // Create contract record
+      const { error: contractError } = await supabase
+        .from('contracts')
+        .insert({
+          user_id: user.id,
+          challenge_id: unsignedChallenge.id,
+          contract_text: contractText,
+          contract_version: '1.0',
+          signed_at: new Date().toISOString(),
+          ip_address: 'N/A',
+          user_agent: navigator.userAgent,
+          full_name: user.user_metadata?.full_name || user.email || 'Trader',
+          email: user.email
+        });
+
+      if (contractError) {
+        console.error('Contract creation error:', contractError);
+      }
+
+      // Update user_challenges
       const { error } = await supabase
         .from('user_challenges')
-        .update({ contract_signed: true })
+        .update({
+          contract_signed: true,
+          credentials_visible: true,
+          credentials_released_at: new Date().toISOString()
+        })
         .eq('id', unsignedChallenge.id);
 
       if (error) throw error;
@@ -284,6 +321,9 @@ function OverviewSection({ user }: { user: any }) {
 
       setShowContractModal(false);
       fetchData();
+
+      // Show success message
+      alert('Contract signed successfully! Your MT5 credentials are now visible.');
     } catch (error) {
       console.error('Error accepting contract:', error);
       alert('Failed to accept contract. Please try again.');
@@ -319,46 +359,113 @@ function OverviewSection({ user }: { user: any }) {
   return (
     <div>
       {showContractModal && unsignedChallenge && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-8 max-w-2xl w-full border border-white/10 shadow-2xl">
-            <h2 className="text-3xl font-bold mb-4">
-              <GradientText>Trading Agreement</GradientText>
-            </h2>
-            <div className="bg-white/5 rounded-lg p-6 mb-6 max-h-96 overflow-y-auto border border-white/10">
-              <h3 className="text-xl font-bold mb-4">Terms and Conditions</h3>
-              <div className="space-y-4 text-white/70 text-sm">
-                <p>Welcome to Fund8r! By accepting this agreement, you acknowledge and agree to the following terms:</p>
-                <ul className="list-disc list-inside space-y-2 ml-4">
-                  <li>You will trade according to our risk management rules</li>
-                  <li>Maximum daily loss limit must not be exceeded</li>
-                  <li>Overall drawdown limit must be maintained</li>
-                  <li>You agree to trade in a professional and ethical manner</li>
-                  <li>All profits will be split according to the agreed profit share</li>
-                  <li>Your trading account credentials are confidential</li>
-                  <li>Violation of rules may result in account termination</li>
-                </ul>
-                <p className="mt-4"><strong>Account Details:</strong></p>
-                <ul className="list-none space-y-1 ml-4">
-                  <li>Challenge: {unsignedChallenge.challenge_type?.challenge_name || 'Standard'}</li>
-                  <li>Account Size: ${parseFloat(unsignedChallenge.account_size).toLocaleString()}</li>
-                  <li>Purchase Date: {new Date(unsignedChallenge.purchase_date).toLocaleDateString()}</li>
-                </ul>
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-8 max-w-4xl w-full border border-white/10 shadow-2xl my-8">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-3xl font-bold mb-2">
+                  <GradientText>Trading Challenge Agreement</GradientText>
+                </h2>
+                <p className="text-white/60 text-sm">Please read carefully and accept to activate your account</p>
+              </div>
+              <button
+                onClick={() => setShowContractModal(false)}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <Check size={24} />
+              </button>
+            </div>
+
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-2 text-yellow-400">
+                <Activity size={20} />
+                <span className="font-semibold">Legal Binding Contract</span>
+              </div>
+              <p className="text-white/70 text-sm mt-1">
+                Your MT5 credentials will be released immediately after signing this agreement
+              </p>
+            </div>
+
+            <div className="bg-white/5 rounded-lg p-6 mb-6 max-h-[500px] overflow-y-auto border border-white/10 font-mono text-xs leading-relaxed">
+              <pre className="whitespace-pre-wrap text-white/80">
+                {generateContractText({
+                  fullName: user.user_metadata?.full_name || user.email || 'Trader',
+                  email: user.email || '',
+                  country: 'N/A',
+                  challengeType: unsignedChallenge.challenge_type?.challenge_name || 'Standard',
+                  accountSize: unsignedChallenge.account_size,
+                  purchasePrice: unsignedChallenge.amount_paid || 0,
+                  profitTarget: 10,
+                  maxDailyLoss: 5,
+                  maxTotalLoss: 10
+                })}
+              </pre>
+            </div>
+
+            <div className="bg-white/5 rounded-lg p-6 mb-6 border border-white/10">
+              <h3 className="text-xl font-bold mb-4 text-white">Electronic Acknowledgment</h3>
+              <div className="space-y-3">
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="mt-1">
+                    <CheckCircle size={20} className="text-neon-green" />
+                  </div>
+                  <span className="text-white/70 text-sm">
+                    I have READ and UNDERSTAND this entire Agreement
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="mt-1">
+                    <CheckCircle size={20} className="text-neon-green" />
+                  </div>
+                  <span className="text-white/70 text-sm">
+                    I AGREE to all Terms and Conditions
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="mt-1">
+                    <CheckCircle size={20} className="text-neon-green" />
+                  </div>
+                  <span className="text-white/70 text-sm">
+                    I am OVER 18 years of age
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="mt-1">
+                    <CheckCircle size={20} className="text-neon-green" />
+                  </div>
+                  <span className="text-white/70 text-sm">
+                    I understand the Challenge Fee is NON-REFUNDABLE
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="mt-1">
+                    <CheckCircle size={20} className="text-neon-green" />
+                  </div>
+                  <span className="text-white/70 text-sm">
+                    This is a LEGALLY BINDING electronic contract
+                  </span>
+                </label>
               </div>
             </div>
+
             <div className="flex gap-4">
               <button
                 onClick={handleContractAccept}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg font-semibold hover:scale-105 transition-transform"
+                className="flex-1 px-8 py-4 bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg font-bold text-lg hover:scale-105 transition-transform shadow-lg"
               >
-                I Accept the Terms
+                I Accept and Sign Contract
               </button>
               <button
                 onClick={() => setShowContractModal(false)}
-                className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-lg font-semibold transition-colors"
+                className="px-8 py-4 bg-white/10 hover:bg-white/20 rounded-lg font-semibold transition-colors"
               >
-                Close
+                Review Later
               </button>
             </div>
+
+            <p className="text-center text-white/50 text-xs mt-4">
+              By clicking "I Accept and Sign Contract", you electronically sign this agreement
+            </p>
           </div>
         </div>
       )}

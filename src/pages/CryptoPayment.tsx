@@ -191,6 +191,33 @@ export default function CryptoPayment() {
 
           if (userChallengeError) {
             console.error('Failed to create user challenge:', userChallengeError);
+          } else if (userChallenge) {
+            // Generate purchase congratulations certificate
+            try {
+              const { error: certError } = await supabase
+                .from('downloads')
+                .insert({
+                  user_id: user.id,
+                  challenge_id: userChallenge.id,
+                  document_type: 'certificate',
+                  title: 'Purchase Congratulations Certificate',
+                  description: `Congratulations on purchasing your ${challengeType} challenge!`,
+                  document_number: `PURCHASE-${Date.now()}`,
+                  issue_date: new Date().toISOString(),
+                  challenge_type: challengeType,
+                  account_size: accountSize,
+                  status: 'generated',
+                  auto_generated: true,
+                  generated_at: new Date().toISOString(),
+                  download_count: 0
+                });
+
+              if (certError) {
+                console.error('Failed to generate purchase certificate:', certError);
+              }
+            } catch (certError) {
+              console.error('Certificate generation error:', certError);
+            }
           }
         } else {
           console.error('Challenge type not found for code:', challengeType);
