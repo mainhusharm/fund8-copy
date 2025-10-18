@@ -584,30 +584,59 @@ function AnalyticsSection({ user }: { user: any }) {
         return;
       }
 
-      const accountSize = parseFloat(account.account_size) || 5000;
-      const currentBalance = parseFloat(account.current_balance) || accountSize;
+      if (!account.mt5_login) {
+        // No MT5 credentials yet, show account info from database
+        const accountSize = parseFloat(account.account_size) || 5000;
+        const currentBalance = parseFloat(account.current_balance) || accountSize;
 
-      // Display account information from Supabase database
-      // Note: For live MT5 data, you need to set up MetaAPI integration via Supabase Edge Function
-      setRealTimeData({
-        balance: accountSize,
-        equity: currentBalance,
-        margin: '0.00',
-        freeMargin: (accountSize * 0.9).toFixed(2),
-        marginLevel: '100.00',
-        openTrades: 0,
-        profit: (currentBalance - accountSize).toFixed(2),
-        profitPercentage: (((currentBalance - accountSize) / accountSize) * 100).toFixed(2),
-        totalTrades: 0,
-        winRate: '0.00',
-        averageWin: '0.00',
-        averageLoss: '0.00',
-        profitFactor: '0.00',
-        sharpeRatio: '0.00',
-        maxDrawdown: '0.00',
-        lastUpdate: new Date().toISOString(),
-        isLiveData: false
-      });
+        setRealTimeData({
+          balance: accountSize,
+          equity: currentBalance,
+          margin: '0.00',
+          freeMargin: (accountSize * 0.9).toFixed(2),
+          marginLevel: '100.00',
+          openTrades: 0,
+          profit: (currentBalance - accountSize).toFixed(2),
+          profitPercentage: (((currentBalance - accountSize) / accountSize) * 100).toFixed(2),
+          totalTrades: 0,
+          winRate: '0.00',
+          averageWin: '0.00',
+          averageLoss: '0.00',
+          profitFactor: '0.00',
+          sharpeRatio: '0.00',
+          maxDrawdown: '0.00',
+          lastUpdate: new Date().toISOString(),
+          isLiveData: false
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Fetch real-time data from Supabase Edge Function
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/get-mt5-data?login=${account.mt5_login}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch MT5 data: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setRealTimeData(data);
     } catch (error) {
       console.error('Error fetching real-time data:', error);
       setRealTimeData(null);
@@ -787,8 +816,8 @@ function AnalyticsSection({ user }: { user: any }) {
                     </h4>
                     <p className="text-white/70 text-sm">
                       {realTimeData?.isLiveData === false
-                        ? 'Currently displaying static account information from the database. To enable real-time MT5 data integration, configure MetaAPI through a Supabase Edge Function.'
-                        : 'This analytics dashboard displays real-time data from your MT5 trading account. Data is refreshed every 5 seconds to provide you with up-to-the-minute trading insights.'
+                        ? 'Currently displaying simulated trading data. Once your MT5 credentials are activated, this will show real-time trading metrics from MetaTrader 5.'
+                        : 'This analytics dashboard displays real-time data from your MT5 trading account via Supabase Edge Function. Data is refreshed every 5 seconds to provide you with up-to-the-minute trading insights.'
                       }
                     </p>
                   </div>
@@ -799,12 +828,18 @@ function AnalyticsSection({ user }: { user: any }) {
             <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-8 text-center backdrop-blur-sm">
               <Activity size={64} className="mx-auto mb-4 text-red-500" />
               <h3 className="text-2xl font-bold mb-2">Unable to Load Real-Time Data</h3>
-              <p className="text-white/70 mb-4">Failed to connect to MT5 backend API. Please ensure:</p>
+              <p className="text-white/70 mb-4">Failed to fetch MT5 data. Please ensure:</p>
               <ul className="text-left max-w-md mx-auto text-white/60 space-y-2">
-                <li>• Backend server is running (http://localhost:5000)</li>
-                <li>• MetaAPI is properly configured</li>
-                <li>• MT5 account credentials are correct</li>
+                <li>• MT5 account credentials have been assigned by admin</li>
+                <li>• Your account is active and properly configured</li>
+                <li>• You have a stable internet connection</li>
               </ul>
+              <button
+                onClick={() => fetchRealTimeData()}
+                className="mt-6 px-6 py-3 bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg font-semibold hover:scale-105 transition-transform"
+              >
+                Retry Connection
+              </button>
             </div>
           )}
         </>
