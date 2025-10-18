@@ -307,12 +307,15 @@ function AccountCard({ account, onUpdate }: { account: MT5Account; onUpdate: () 
   const sendCredentials = async () => {
     setSending(true);
     try {
-      // Mark as sent first (this will make credentials visible to user)
+      // Mark as sent and visible (this will make credentials visible to user)
       const { error: updateError } = await supabase
         .from('user_challenges')
         .update({
           credentials_sent: true,
-          credentials_sent_at: new Date().toISOString()
+          credentials_sent_at: new Date().toISOString(),
+          credentials_visible: true,
+          credentials_released_at: new Date().toISOString(),
+          status: 'active'
         })
         .eq('id', account.account_id);
 
@@ -521,6 +524,30 @@ function CreateAccountModal({ users, onClose, onSuccess }: any) {
         .eq('id', selectedChallenge.id);
 
       if (updateError) throw updateError;
+
+      // Generate purchase certificate when credentials are assigned
+      try {
+        const { error: certError } = await supabase
+          .from('downloads')
+          .insert({
+            user_id: selectedChallenge.user_id,
+            challenge_id: selectedChallenge.id,
+            document_type: 'certificate',
+            title: 'Challenge Purchase Certificate',
+            description: 'Certificate for purchasing challenge',
+            document_number: `CERT-${Date.now()}`,
+            issue_date: new Date().toISOString(),
+            account_size: selectedChallenge.account_size,
+            status: 'generated',
+            auto_generated: true,
+            generated_at: new Date().toISOString(),
+            download_count: 0
+          });
+
+        if (certError) console.error('Error generating certificate:', certError);
+      } catch (certError) {
+        console.error('Certificate generation error:', certError);
+      }
 
       alert('MT5 credentials assigned successfully!');
       onSuccess();

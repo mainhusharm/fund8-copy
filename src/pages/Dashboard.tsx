@@ -184,6 +184,8 @@ function OverviewSection({ user }: { user: any }) {
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [showContractModal, setShowContractModal] = useState(false);
+  const [unsignedChallenge, setUnsignedChallenge] = useState<any>(null);
 
   useEffect(() => {
     fetchData();
@@ -200,17 +202,25 @@ function OverviewSection({ user }: { user: any }) {
         .eq('user_id', user.id)
         .order('purchase_date', { ascending: false });
 
+      // Check for unsigned contracts on first visit
+      const unsigned = challenges?.find(c => !c.contract_signed && c.trading_account_id);
+      if (unsigned) {
+        setUnsignedChallenge(unsigned);
+        setShowContractModal(true);
+      }
+
       // Separate challenges into pending (no credentials) and active (has credentials)
       const pending = challenges?.filter(c =>
         !c.trading_account_id ||
-        !c.credentials_sent ||
-        c.status === 'pending_payment'
+        c.status === 'pending_payment' ||
+        c.status === 'pending_credentials'
       ) || [];
 
       const active = challenges?.filter(c =>
         c.trading_account_id &&
-        c.credentials_sent &&
-        c.status !== 'pending_payment'
+        (c.credentials_visible || c.credentials_sent) &&
+        c.status !== 'pending_payment' &&
+        c.status !== 'pending_credentials'
       ).map(c => ({
         account_id: c.id,
         user_id: c.user_id,
@@ -258,8 +268,101 @@ function OverviewSection({ user }: { user: any }) {
 
   const selectedAccount = mt5Accounts.find(acc => acc.account_id === selectedAccountId);
 
+  const handleContractAccept = async () => {
+    if (!unsignedChallenge) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_challenges')
+        .update({ contract_signed: true })
+        .eq('id', unsignedChallenge.id);
+
+      if (error) throw error;
+
+      // Generate purchase certificate
+      await generatePurchaseCertificate(unsignedChallenge);
+
+      setShowContractModal(false);
+      fetchData();
+    } catch (error) {
+      console.error('Error accepting contract:', error);
+      alert('Failed to accept contract. Please try again.');
+    }
+  };
+
+  const generatePurchaseCertificate = async (challenge: any) => {
+    try {
+      const { error } = await supabase
+        .from('downloads')
+        .insert({
+          user_id: user.id,
+          challenge_id: challenge.id,
+          document_type: 'certificate',
+          title: 'Challenge Purchase Certificate',
+          description: `Certificate for purchasing ${challenge.challenge_type?.challenge_name || 'Challenge'}`,
+          document_number: `CERT-${Date.now()}`,
+          issue_date: new Date().toISOString(),
+          challenge_type: challenge.challenge_type?.challenge_name,
+          account_size: challenge.account_size,
+          status: 'generated',
+          auto_generated: true,
+          generated_at: new Date().toISOString(),
+          download_count: 0
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error generating certificate:', error);
+    }
+  };
+
   return (
     <div>
+      {showContractModal && unsignedChallenge && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-8 max-w-2xl w-full border border-white/10 shadow-2xl">
+            <h2 className="text-3xl font-bold mb-4">
+              <GradientText>Trading Agreement</GradientText>
+            </h2>
+            <div className="bg-white/5 rounded-lg p-6 mb-6 max-h-96 overflow-y-auto border border-white/10">
+              <h3 className="text-xl font-bold mb-4">Terms and Conditions</h3>
+              <div className="space-y-4 text-white/70 text-sm">
+                <p>Welcome to Fund8r! By accepting this agreement, you acknowledge and agree to the following terms:</p>
+                <ul className="list-disc list-inside space-y-2 ml-4">
+                  <li>You will trade according to our risk management rules</li>
+                  <li>Maximum daily loss limit must not be exceeded</li>
+                  <li>Overall drawdown limit must be maintained</li>
+                  <li>You agree to trade in a professional and ethical manner</li>
+                  <li>All profits will be split according to the agreed profit share</li>
+                  <li>Your trading account credentials are confidential</li>
+                  <li>Violation of rules may result in account termination</li>
+                </ul>
+                <p className="mt-4"><strong>Account Details:</strong></p>
+                <ul className="list-none space-y-1 ml-4">
+                  <li>Challenge: {unsignedChallenge.challenge_type?.challenge_name || 'Standard'}</li>
+                  <li>Account Size: ${parseFloat(unsignedChallenge.account_size).toLocaleString()}</li>
+                  <li>Purchase Date: {new Date(unsignedChallenge.purchase_date).toLocaleDateString()}</li>
+                </ul>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <button
+                onClick={handleContractAccept}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg font-semibold hover:scale-105 transition-transform"
+              >
+                I Accept the Terms
+              </button>
+              <button
+                onClick={() => setShowContractModal(false)}
+                className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-lg font-semibold transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <h1 className="text-4xl font-bold mb-2">
         <GradientText>Account Overview</GradientText>
       </h1>
