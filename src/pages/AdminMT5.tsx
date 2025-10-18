@@ -3,7 +3,7 @@ import { supabase } from '../lib/db';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import GradientText from '../components/ui/GradientText';
-import { Plus, Send, Eye, EyeOff, Copy, Check, X, Search } from 'lucide-react';
+import { Plus, Send, Eye, EyeOff, Copy, Check, X, Search, Award, Trophy, User, AlertTriangle, FileText, Users, Target, Calendar } from 'lucide-react';
 
 interface MT5Account {
   account_id: string;
@@ -29,6 +29,7 @@ export default function AdminMT5() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState<'accounts' | 'certificates' | 'competitions' | 'profiles' | 'breach'>('accounts');
 
   useEffect(() => {
     loadData();
@@ -122,24 +123,121 @@ export default function AdminMT5() {
 
       <div className="pt-32 pb-20 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">
-                <GradientText>MT5 Account Management</GradientText>
-              </h1>
-              <p className="text-gray-400">Manually create and manage user MT5 accounts</p>
-            </div>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="btn-gradient flex items-center space-x-2"
-            >
-              <Plus size={20} />
-              <span>Create Account</span>
-            </button>
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold mb-2">
+              <GradientText>Admin MT5 Management Panel</GradientText>
+            </h1>
+            <p className="text-gray-400">Complete admin control center for certificates, competitions, user profiles, and account management</p>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          {/* Tab Navigation */}
+          <div className="flex flex-wrap gap-2 mb-8 glass-card p-2">
+            <TabButton
+              active={activeTab === 'accounts'}
+              onClick={() => setActiveTab('accounts')}
+              icon={<Users size={18} />}
+              label="MT5 Accounts"
+            />
+            <TabButton
+              active={activeTab === 'certificates'}
+              onClick={() => setActiveTab('certificates')}
+              icon={<Award size={18} />}
+              label="Manual Certificates"
+            />
+            <TabButton
+              active={activeTab === 'competitions'}
+              onClick={() => setActiveTab('competitions')}
+              icon={<Trophy size={18} />}
+              label="Competitions"
+            />
+            <TabButton
+              active={activeTab === 'profiles'}
+              onClick={() => setActiveTab('profiles')}
+              icon={<User size={18} />}
+              label="User Profile 360°"
+            />
+            <TabButton
+              active={activeTab === 'breach'}
+              onClick={() => setActiveTab('breach')}
+              icon={<AlertTriangle size={18} />}
+              label="Manual Breach"
+            />
+          </div>
+
+          {/* Tab Content */}
+          {activeTab === 'accounts' && (
+            <AccountsTab
+              accounts={accounts}
+              pendingChallenges={pendingChallenges}
+              users={users}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              setShowCreateModal={setShowCreateModal}
+              loadData={loadData}
+            />
+          )}
+
+          {activeTab === 'certificates' && <CertificatesTab />}
+          {activeTab === 'competitions' && <CompetitionsTab />}
+          {activeTab === 'profiles' && <UserProfilesTab />}
+          {activeTab === 'breach' && <ManualBreachTab />}
+        </div>
+      </div>
+
+      {showCreateModal && (
+        <CreateAccountModal
+          users={users}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            setShowCreateModal(false);
+            loadData();
+          }}
+        />
+      )}
+
+      <Footer />
+    </div>
+  );
+}
+
+function TabButton({ active, onClick, icon, label }: any) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+        active
+          ? 'bg-gradient-to-r from-electric-blue to-neon-purple text-white'
+          : 'bg-white/5 hover:bg-white/10 text-white/70'
+      }`}
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
+  );
+}
+
+function AccountsTab({ accounts, pendingChallenges, searchTerm, setSearchTerm, setShowCreateModal, loadData }: any) {
+  const filteredAccounts = accounts.filter((acc: any) =>
+    acc.mt5_login.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    acc.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    acc.account_type.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <>
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-2xl font-bold">MT5 Account Management</h2>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="btn-gradient flex items-center space-x-2"
+        >
+          <Plus size={20} />
+          <span>Create Account</span>
+        </button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <StatCard
               label="Pending Setup"
               value={pendingChallenges.length}
@@ -164,9 +262,9 @@ export default function AdminMT5() {
               icon="💰"
               color="purple"
             />
-          </div>
+      </div>
 
-          {/* Pending Challenges Section */}
+      {/* Pending Challenges Section */}
           {pendingChallenges.length > 0 && (
             <div className="glass-card p-6 mb-8 border-2 border-yellow-500/50">
               <h2 className="text-2xl font-bold mb-2 text-yellow-400">⏳ Pending Challenges - Needs MT5 Credentials</h2>
@@ -215,7 +313,7 @@ export default function AdminMT5() {
             </div>
           )}
 
-          {/* Search */}
+      {/* Search */}
           <div className="mb-6">
             <div className="relative max-w-md">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -227,9 +325,9 @@ export default function AdminMT5() {
                 className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none"
               />
             </div>
-          </div>
+      </div>
 
-          {/* Accounts List */}
+      {/* Accounts List */}
           <div className="glass-card p-6">
             <h2 className="text-2xl font-bold mb-6">All MT5 Accounts</h2>
 
@@ -254,23 +352,8 @@ export default function AdminMT5() {
                 ))}
               </div>
             )}
-          </div>
-        </div>
       </div>
-
-      {showCreateModal && (
-        <CreateAccountModal
-          users={users}
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={() => {
-            setShowCreateModal(false);
-            loadData();
-          }}
-        />
-      )}
-
-      <Footer />
-    </div>
+    </>
   );
 }
 
@@ -697,6 +780,459 @@ function generatePassword() {
     password += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return password;
+}
+
+function CertificatesTab() {
+  const [searchEmail, setSearchEmail] = useState('');
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+
+  const searchUsers = async (email: string) => {
+    if (email.length < 3) {
+      setSearchResults([]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('get_users_for_admin');
+      if (error) throw error;
+
+      const filtered = data?.filter((u: any) =>
+        u.email.toLowerCase().includes(email.toLowerCase()) ||
+        u.full_name?.toLowerCase().includes(email.toLowerCase())
+      ) || [];
+
+      setSearchResults(filtered.slice(0, 10));
+    } catch (error) {
+      console.error('Error searching users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <h2 className="text-3xl font-bold mb-6">
+        <GradientText>Manual Certificate Management</GradientText>
+      </h2>
+      <p className="text-white/70 mb-8">Send certificates manually when automatic generation fails</p>
+
+      <div className="glass-card p-8 mb-6">
+        <h3 className="text-xl font-bold mb-4">Search User</h3>
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search by email or name..."
+            value={searchEmail}
+            onChange={(e) => {
+              setSearchEmail(e.target.value);
+              searchUsers(e.target.value);
+            }}
+            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none"
+          />
+
+          {searchResults.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-deep-space border border-white/20 rounded-lg max-h-64 overflow-y-auto z-10">
+              {searchResults.map(user => (
+                <button
+                  key={user.id}
+                  onClick={() => {
+                    setSelectedUser(user);
+                    setSearchEmail(user.email);
+                    setSearchResults([]);
+                  }}
+                  className="w-full text-left px-4 py-3 hover:bg-white/10 transition-all border-b border-white/5 last:border-0"
+                >
+                  <div className="font-semibold">{user.email}</div>
+                  <div className="text-sm text-white/60">{user.full_name || 'N/A'} - ID: {user.id.slice(0, 8)}</div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {selectedUser && (
+        <div className="glass-card p-8 mb-6">
+          <h3 className="text-xl font-bold mb-4">Selected User</h3>
+          <div className="bg-white/5 rounded-lg p-6 mb-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="text-white/60 text-sm">Email</div>
+                <div className="font-bold">{selectedUser.email}</div>
+              </div>
+              <div>
+                <div className="text-white/60 text-sm">Name</div>
+                <div className="font-bold">{selectedUser.full_name || 'N/A'}</div>
+              </div>
+              <div>
+                <div className="text-white/60 text-sm">User ID</div>
+                <div className="font-mono text-sm">{selectedUser.id}</div>
+              </div>
+              <div>
+                <div className="text-white/60 text-sm">Registered</div>
+                <div className="font-bold">{new Date(selectedUser.created_at).toLocaleDateString()}</div>
+              </div>
+            </div>
+          </div>
+
+          <h4 className="text-lg font-bold mb-4">Send Certificate</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <CertificateCard
+              icon="🎉"
+              title="Welcome Certificate"
+              description="Send official welcome certificate"
+              userId={selectedUser.id}
+            />
+            <CertificateCard
+              icon="🏆"
+              title="Challenge Passed"
+              description="Certificate for passing challenge"
+              userId={selectedUser.id}
+            />
+            <CertificateCard
+              icon="💎"
+              title="Funded Trader"
+              description="Official funded trader certificate"
+              userId={selectedUser.id}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="glass-card p-8">
+        <h3 className="text-xl font-bold mb-4">Certificate History</h3>
+        <p className="text-white/60">Recent certificate sends will appear here</p>
+      </div>
+    </div>
+  );
+}
+
+function CertificateCard({ icon, title, description, userId }: any) {
+  const [sending, setSending] = useState(false);
+
+  const sendCertificate = async () => {
+    setSending(true);
+    try {
+      const { error } = await supabase
+        .from('downloads')
+        .insert({
+          user_id: userId,
+          document_type: 'certificate',
+          title,
+          description,
+          document_number: `MANUAL-${Date.now()}`,
+          issue_date: new Date().toISOString(),
+          status: 'generated',
+          auto_generated: false,
+          generated_at: new Date().toISOString(),
+          download_count: 0
+        });
+
+      if (error) throw error;
+      alert('Certificate sent successfully!');
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Failed to send certificate');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="bg-gradient-to-br from-white/5 to-white/10 rounded-xl p-6 border border-white/10 hover:border-electric-blue/50 transition-all">
+      <div className="text-6xl mb-4 text-center">{icon}</div>
+      <h4 className="text-lg font-bold mb-2 text-center">{title}</h4>
+      <p className="text-white/60 text-sm mb-4 text-center">{description}</p>
+      <button
+        onClick={sendCertificate}
+        disabled={sending}
+        className="w-full btn-gradient disabled:opacity-50"
+      >
+        {sending ? 'Sending...' : 'Send Certificate'}
+      </button>
+    </div>
+  );
+}
+
+function CompetitionsTab() {
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h2 className="text-3xl font-bold mb-2">
+            <GradientText>Trading Competitions</GradientText>
+          </h2>
+          <p className="text-white/70">Create and manage trading competitions</p>
+        </div>
+        <button className="btn-gradient flex items-center space-x-2">
+          <Plus size={20} />
+          <span>Create Competition</span>
+        </button>
+      </div>
+
+      <div className="glass-card p-8 text-center">
+        <Trophy size={64} className="mx-auto mb-4 text-white/30" />
+        <h3 className="text-xl font-bold mb-2">No Competitions Yet</h3>
+        <p className="text-white/60 mb-6">Create your first trading competition to engage your traders</p>
+        <button className="btn-gradient">Create First Competition</button>
+      </div>
+    </div>
+  );
+}
+
+function UserProfilesTab() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  const searchUsers = async (query: string) => {
+    if (query.length < 3) {
+      setSearchResults([]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('get_users_for_admin');
+      if (error) throw error;
+
+      const filtered = data?.filter((u: any) =>
+        u.email.toLowerCase().includes(query.toLowerCase()) ||
+        u.full_name?.toLowerCase().includes(query.toLowerCase())
+      ) || [];
+
+      setSearchResults(filtered.slice(0, 10));
+    } catch (error) {
+      console.error('Error searching users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <h2 className="text-3xl font-bold mb-6">
+        <GradientText>User Profile 360°</GradientText>
+      </h2>
+      <p className="text-white/70 mb-8">Complete user information and trading history</p>
+
+      <div className="glass-card p-8 mb-6">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <input
+            type="text"
+            placeholder="Search by email, name, or user ID..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              searchUsers(e.target.value);
+            }}
+            className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none"
+          />
+
+          {searchResults.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-deep-space border border-white/20 rounded-lg max-h-64 overflow-y-auto z-10">
+              {searchResults.map(user => (
+                <button
+                  key={user.id}
+                  onClick={() => {
+                    setSelectedUser(user);
+                    setSearchTerm(user.email);
+                    setSearchResults([]);
+                  }}
+                  className="w-full text-left px-4 py-3 hover:bg-white/10 transition-all border-b border-white/5 last:border-0"
+                >
+                  <div className="font-semibold">{user.email}</div>
+                  <div className="text-sm text-white/60">{user.full_name || 'N/A'} - ID: {user.id.slice(0, 8)}</div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {selectedUser ? (
+        <div className="glass-card p-8">
+          <h3 className="text-2xl font-bold mb-6">{selectedUser.email}</h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white/5 rounded-lg p-4">
+              <div className="text-white/60 text-sm mb-1">Full Name</div>
+              <div className="font-bold">{selectedUser.full_name || 'N/A'}</div>
+            </div>
+            <div className="bg-white/5 rounded-lg p-4">
+              <div className="text-white/60 text-sm mb-1">User ID</div>
+              <div className="font-mono text-sm">{selectedUser.id.slice(0, 16)}...</div>
+            </div>
+            <div className="bg-white/5 rounded-lg p-4">
+              <div className="text-white/60 text-sm mb-1">Registered</div>
+              <div className="font-bold">{new Date(selectedUser.created_at).toLocaleDateString()}</div>
+            </div>
+            <div className="bg-white/5 rounded-lg p-4">
+              <div className="text-white/60 text-sm mb-1">Status</div>
+              <div className="font-bold text-neon-green">Active</div>
+            </div>
+          </div>
+
+          <p className="text-white/60 text-center py-8">Full user profile details coming soon</p>
+        </div>
+      ) : (
+        <div className="glass-card p-12 text-center">
+          <User size={64} className="mx-auto mb-4 text-white/30" />
+          <h3 className="text-xl font-bold mb-2">No User Selected</h3>
+          <p className="text-white/60">Search for a user to view their complete profile</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ManualBreachTab() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [selectedAccount, setSelectedAccount] = useState<any>(null);
+
+  const searchAccounts = async (query: string) => {
+    if (query.length < 3) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      const { data: usersData } = await supabase.rpc('get_users_for_admin');
+      const { data: challenges } = await supabase
+        .from('user_challenges')
+        .select('*')
+        .not('trading_account_id', 'is', null)
+        .order('purchase_date', { ascending: false });
+
+      const usersMap = new Map(usersData?.map((u: any) => [u.id, u]) || []);
+
+      const filtered = challenges?.filter((c: any) => {
+        const user = usersMap.get(c.user_id);
+        return c.trading_account_id?.toLowerCase().includes(query.toLowerCase()) ||
+               user?.email?.toLowerCase().includes(query.toLowerCase());
+      }).map((c: any) => {
+        const user = usersMap.get(c.user_id);
+        return {
+          ...c,
+          user_email: user?.email || 'Unknown',
+          user_name: user?.full_name || 'N/A'
+        };
+      }) || [];
+
+      setSearchResults(filtered.slice(0, 10));
+    } catch (error) {
+      console.error('Error searching accounts:', error);
+    }
+  };
+
+  return (
+    <div>
+      <div className="bg-red-500/10 border-2 border-red-500/50 rounded-xl p-6 mb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <AlertTriangle size={24} className="text-red-500" />
+          <h2 className="text-2xl font-bold text-red-500">Manual Account Breach</h2>
+        </div>
+        <p className="text-white/70">Use with caution - This action is irreversible</p>
+      </div>
+
+      <div className="glass-card p-8 mb-6">
+        <h3 className="text-xl font-bold mb-4">Search Account</h3>
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <input
+            type="text"
+            placeholder="Search by Account ID, User email, or MT5 Login..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              searchAccounts(e.target.value);
+            }}
+            className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:border-red-500 focus:outline-none"
+          />
+
+          {searchResults.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-deep-space border border-white/20 rounded-lg max-h-64 overflow-y-auto z-10">
+              {searchResults.map((account: any) => (
+                <button
+                  key={account.id}
+                  onClick={() => {
+                    setSelectedAccount(account);
+                    setSearchTerm(`${account.user_email} - ${account.trading_account_id}`);
+                    setSearchResults([]);
+                  }}
+                  className="w-full text-left px-4 py-3 hover:bg-white/10 transition-all border-b border-white/5 last:border-0"
+                >
+                  <div className="font-semibold">{account.user_email}</div>
+                  <div className="text-sm text-white/60">
+                    MT5: {account.trading_account_id} - ${parseFloat(account.account_size).toLocaleString()} - {account.challenge_type_id}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {selectedAccount ? (
+        <div className="glass-card p-8">
+          <h3 className="text-xl font-bold mb-6">Selected Account</h3>
+
+          <div className="bg-white/5 rounded-lg p-6 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <div className="text-white/60 text-sm">User</div>
+                <div className="font-bold">{selectedAccount.user_email}</div>
+              </div>
+              <div>
+                <div className="text-white/60 text-sm">MT5 Login</div>
+                <div className="font-bold">{selectedAccount.trading_account_id}</div>
+              </div>
+              <div>
+                <div className="text-white/60 text-sm">Account Size</div>
+                <div className="font-bold">${parseFloat(selectedAccount.account_size).toLocaleString()}</div>
+              </div>
+              <div>
+                <div className="text-white/60 text-sm">Status</div>
+                <div className={`font-bold ${selectedAccount.status === 'active' ? 'text-neon-green' : 'text-white/70'}`}>
+                  {selectedAccount.status.toUpperCase()}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-6">
+            <h4 className="text-lg font-bold mb-4 text-red-500">Breach This Account</h4>
+            <p className="text-white/60 mb-4">Select a breach reason:</p>
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              {['Daily Loss Limit', 'Max Loss Limit', 'Consistency Rule', 'Copy Trading', 'Admin Decision', 'Other'].map(reason => (
+                <button
+                  key={reason}
+                  className="px-4 py-3 bg-red-500/20 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-all text-left"
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+            <button className="w-full px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-bold transition-all">
+              Breach Account
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="glass-card p-12 text-center">
+          <AlertTriangle size={64} className="mx-auto mb-4 text-white/30" />
+          <h3 className="text-xl font-bold mb-2">No Account Selected</h3>
+          <p className="text-white/60">Search for an account to manually breach it</p>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function generateEmailHTML(account: MT5Account) {
