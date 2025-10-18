@@ -917,10 +917,11 @@ function ContractsSection({ user }: { user: any }) {
   async function fetchContracts() {
     try {
       const { data, error } = await supabase
-        .from('contracts')
-        .select('*')
+        .from('user_challenges')
+        .select('*, challenge_type:challenge_types(challenge_name)')
         .eq('user_id', user.id)
-        .order('signed_at', { ascending: false });
+        .eq('contract_signed', true)
+        .order('purchase_date', { ascending: false });
 
       if (error) throw error;
       setContracts(data || []);
@@ -946,16 +947,19 @@ function ContractsSection({ user }: { user: any }) {
             <div key={contract.id} className="bg-white/5 rounded-xl p-6 border border-white/10">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="text-xl font-bold mb-2">Trading Challenge Agreement</h3>
-                  <p className="text-white/60 text-sm">Signed: {new Date(contract.signed_at).toLocaleString()}</p>
-                  <p className="text-white/50 text-xs mt-1">Contract ID: {contract.id.slice(0, 8)}...</p>
+                  <h3 className="text-xl font-bold mb-2">
+                    {contract.challenge_type?.challenge_name || 'Trading Challenge'} Agreement
+                  </h3>
+                  <p className="text-white/60 text-sm">
+                    Account Size: ${parseFloat(contract.account_size).toLocaleString()}
+                  </p>
+                  <p className="text-white/60 text-sm">
+                    Signed: {contract.contract_signed_at ? new Date(contract.contract_signed_at).toLocaleString() : new Date(contract.purchase_date).toLocaleString()}
+                  </p>
+                  <p className="text-white/50 text-xs mt-1">Challenge ID: {contract.id.slice(0, 8)}...</p>
                 </div>
-                <span className={`px-4 py-2 rounded-lg text-sm font-semibold ${
-                  contract.status === 'signed' ? 'bg-neon-green/20 text-neon-green' :
-                  contract.status === 'voided' ? 'bg-red-500/20 text-red-400' :
-                  'bg-yellow-500/20 text-yellow-400'
-                }`}>
-                  {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
+                <span className={`px-4 py-2 rounded-lg text-sm font-semibold bg-neon-green/20 text-neon-green`}>
+                  Signed
                 </span>
               </div>
 
@@ -1124,22 +1128,12 @@ function BillingSection({ user }: { user: any }) {
 
   async function fetchTransactions() {
     try {
-      let query = supabase
-        .from('transactions')
+      const { data, error } = await supabase
+        .from('payments')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (filter !== 'all') {
-        const typeMap = {
-          purchase: 'challenge_purchase',
-          payout: 'payout',
-          refund: 'refund'
-        };
-        query = query.eq('transaction_type', typeMap[filter]);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
       setTransactions(data || []);
     } catch (error) {
@@ -1150,10 +1144,8 @@ function BillingSection({ user }: { user: any }) {
   }
 
   const totals = transactions.reduce((acc, txn) => {
-    if (txn.transaction_type === 'challenge_purchase') {
-      acc.spent += txn.amount || 0;
-    } else if (txn.transaction_type === 'payout') {
-      acc.earned += txn.amount || 0;
+    if (txn.status === 'completed') {
+      acc.spent += parseFloat(txn.amount) || 0;
     }
     return acc;
   }, { spent: 0, earned: 0 });
@@ -1224,31 +1216,23 @@ function BillingSection({ user }: { user: any }) {
                       {txn.transaction_id || txn.id.slice(0, 8)}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${
-                        txn.transaction_type === 'challenge_purchase' ? 'bg-neon-purple/20 text-neon-purple' :
-                        txn.transaction_type === 'payout' ? 'bg-neon-green/20 text-neon-green' :
-                        'bg-orange-500/20 text-orange-400'
-                      }`}>
-                        {txn.transaction_type === 'challenge_purchase' ? 'Purchase' :
-                         txn.transaction_type === 'payout' ? 'Payout' : 'Refund'}
+                      <span className={`px-3 py-1 rounded-lg text-xs font-semibold bg-neon-purple/20 text-neon-purple`}>
+                        Purchase
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      {txn.transaction_type === 'challenge_purchase' ? 'Challenge Purchase' :
-                       txn.transaction_type === 'payout' ? 'Trading Profit Payout' : 'Refund'}
+                      {txn.notes || 'Challenge Purchase'}
                     </td>
-                    <td className={`px-6 py-4 text-right font-bold text-lg ${
-                      txn.transaction_type === 'payout' ? 'text-neon-green' : 'text-white'
-                    }`}>
-                      {txn.transaction_type === 'payout' ? '+' : ''}${(txn.amount || 0).toLocaleString()}
+                    <td className={`px-6 py-4 text-right font-bold text-lg text-white`}>
+                      ${parseFloat(txn.amount || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${
-                        txn.payment_status === 'completed' ? 'bg-neon-green/20 text-neon-green' :
-                        txn.payment_status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                        txn.status === 'completed' ? 'bg-neon-green/20 text-neon-green' :
+                        txn.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
                         'bg-red-500/20 text-red-400'
                       }`}>
-                        {txn.payment_status || 'Completed'}
+                        {txn.status || 'Completed'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-white/70">

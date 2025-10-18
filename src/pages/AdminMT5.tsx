@@ -429,139 +429,84 @@ function CredentialField({ label, value, onCopy, copied, showPassword, onToggleP
 }
 
 function CreateAccountModal({ users, onClose, onSuccess }: any) {
+  const [pendingChallenges, setPendingChallenges] = useState<any[]>([]);
+  const [selectedChallenge, setSelectedChallenge] = useState<any>(null);
   const [formData, setFormData] = useState({
-    user_id: '',
     mt5_login: '',
     mt5_password: generatePassword(),
     mt5_server: 'MetaQuotes-Demo',
-    account_type: 'standard',
-    account_size: 10000,
-    initial_balance: 10000,
     leverage: 100
   });
   const [creating, setCreating] = useState(false);
-  const [loadingUserData, setLoadingUserData] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleUserSelect = async (userId: string) => {
-    if (!userId) {
-      setFormData({
-        ...formData,
-        user_id: '',
-        account_type: 'standard',
-        account_size: 10000,
-        initial_balance: 10000
-      });
+  useEffect(() => {
+    loadPendingChallenges();
+  }, []);
+
+  async function loadPendingChallenges() {
+    try {
+      const { data: challenges, error } = await supabase
+        .from('user_challenges')
+        .select('*, users:user_id(email, full_name)')
+        .is('trading_account_id', null)
+        .neq('status', 'pending_payment')
+        .order('purchase_date', { ascending: false });
+
+      if (error) throw error;
+      setPendingChallenges(challenges || []);
+    } catch (error) {
+      console.error('Error loading pending challenges:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleChallengeSelect = (challengeId: string) => {
+    if (!challengeId) {
+      setSelectedChallenge(null);
       return;
     }
 
-    setLoadingUserData(true);
-    try {
-      // Get user's most recent payment to extract account size and type
-      const { data: payments, error: paymentError } = await supabase
-        .from('payments')
-        .select('notes, created_at')
-        .eq('user_id', userId)
-        .eq('status', 'completed')
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (paymentError) throw paymentError;
-
-      if (payments && payments.length > 0) {
-        const notes = payments[0].notes || '';
-
-        // Parse account size from notes (format: "Account: 200000" or "Account: $200,000")
-        const accountMatch = notes.match(/Account:\s*\$?([0-9,]+)/i);
-        const accountSize = accountMatch
-          ? parseInt(accountMatch[1].replace(/,/g, ''))
-          : 10000;
-
-        // Parse challenge type from notes (format: "Challenge: swing")
-        const challengeMatch = notes.match(/Challenge:\s*(\w+)/i);
-        const accountType = challengeMatch
-          ? challengeMatch[1].toLowerCase()
-          : 'standard';
-
-        setFormData({
-          ...formData,
-          user_id: userId,
-          account_type: accountType,
-          account_size: accountSize,
-          initial_balance: accountSize
-        });
-      } else {
-        // No payment found, use defaults
-        setFormData({
-          ...formData,
-          user_id: userId
-        });
-      }
-    } catch (error) {
-      console.error('Error loading user purchase data:', error);
-      setFormData({
-        ...formData,
-        user_id: userId
-      });
-    } finally {
-      setLoadingUserData(false);
-    }
+    const challenge = pendingChallenges.find(c => c.id === challengeId);
+    setSelectedChallenge(challenge);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!selectedChallenge) {
+      alert('Please select a challenge');
+      return;
+    }
+
+    if (!formData.mt5_login) {
+      alert('Please enter MT5 login ID');
+      return;
+    }
+
     setCreating(true);
 
     try {
-      // Find the user's pending challenge to update with credentials
-      const { data: pendingChallenges, error: fetchError } = await supabase
+      // Update the selected challenge with MT5 credentials
+      const { error: updateError } = await supabase
         .from('user_challenges')
-        .select('id')
-        .eq('user_id', formData.user_id)
-        .is('trading_account_id', null)
-        .neq('status', 'pending_payment')
-        .order('purchase_date', { ascending: false })
-        .limit(1);
+        .update({
+          trading_account_id: formData.mt5_login,
+          trading_account_password: formData.mt5_password,
+          trading_account_server: formData.mt5_server,
+          status: 'credentials_given',
+          credentials_sent: false
+        })
+        .eq('id', selectedChallenge.id);
 
-      if (fetchError) throw fetchError;
+      if (updateError) throw updateError;
 
-      if (pendingChallenges && pendingChallenges.length > 0) {
-        // Update existing challenge with MT5 credentials
-        const { error: updateError } = await supabase
-          .from('user_challenges')
-          .update({
-            trading_account_id: formData.mt5_login,
-            trading_account_password: formData.mt5_password,
-            trading_account_server: formData.mt5_server,
-            status: 'active',
-            credentials_sent: false
-          })
-          .eq('id', pendingChallenges[0].id);
-
-        if (updateError) throw updateError;
-      } else {
-        // Create new challenge if none exists
-        const { error: insertError } = await supabase
-          .from('user_challenges')
-          .insert({
-            user_id: formData.user_id,
-            challenge_type_id: 'manual',
-            account_size: formData.account_size,
-            trading_account_id: formData.mt5_login,
-            trading_account_password: formData.mt5_password,
-            trading_account_server: formData.mt5_server,
-            status: 'active',
-            purchase_date: new Date().toISOString(),
-            credentials_sent: false
-          });
-
-        if (insertError) throw insertError;
-      }
-
-      alert('MT5 account created successfully!');
+      alert('MT5 credentials assigned successfully!');
       onSuccess();
     } catch (error) {
-      console.error('Error creating account:', error);
-      alert('Failed to create account');
+      console.error('Error assigning credentials:', error);
+      alert('Failed to assign credentials');
     } finally {
       setCreating(false);
     }
@@ -579,27 +524,55 @@ function CreateAccountModal({ users, onClose, onSuccess }: any) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-semibold mb-2">Select User *</label>
-            <select
-              value={formData.user_id}
-              onChange={(e) => handleUserSelect(e.target.value)}
-              required
-              disabled={loadingUserData}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none disabled:opacity-50"
-            >
-              <option value="">-- Select User --</option>
-              {users.map((user: any) => (
-                <option key={user.id} value={user.id} className="bg-deep-space">
-                  {user.email} {user.full_name ? `(${user.full_name})` : ''}
-                </option>
-              ))}
-            </select>
-            {loadingUserData && (
-              <p className="text-sm text-electric-blue mt-2">Loading user purchase data...</p>
-            )}
+        {loading ? (
+          <div className="text-center py-8 text-white/60">Loading...</div>
+        ) : pendingChallenges.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-white/60 mb-4">No pending challenges found</p>
+            <p className="text-sm text-white/50">All purchased challenges have been assigned MT5 credentials</p>
           </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold mb-2">Select Pending Challenge *</label>
+              <select
+                value={selectedChallenge?.id || ''}
+                onChange={(e) => handleChallengeSelect(e.target.value)}
+                required
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none"
+              >
+                <option value="">-- Select Challenge --</option>
+                {pendingChallenges.map((challenge: any) => (
+                  <option key={challenge.id} value={challenge.id} className="bg-deep-space">
+                    {challenge.users?.email} - ${parseFloat(challenge.account_size).toLocaleString()} - {challenge.challenge_type_id}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedChallenge && (
+              <div className="p-4 bg-electric-blue/10 border border-electric-blue/30 rounded-lg">
+                <h4 className="font-bold mb-2">Selected Challenge Details:</h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-white/60">User:</span>
+                    <div className="font-semibold">{selectedChallenge.users?.email}</div>
+                  </div>
+                  <div>
+                    <span className="text-white/60">Account Size:</span>
+                    <div className="font-semibold">${parseFloat(selectedChallenge.account_size).toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <span className="text-white/60">Challenge Type:</span>
+                    <div className="font-semibold">{selectedChallenge.challenge_type_id}</div>
+                  </div>
+                  <div>
+                    <span className="text-white/60">Purchased:</span>
+                    <div className="font-semibold">{new Date(selectedChallenge.purchase_date).toLocaleDateString()}</div>
+                  </div>
+                </div>
+              </div>
+            )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -647,85 +620,24 @@ function CreateAccountModal({ users, onClose, onSuccess }: any) {
             />
           </div>
 
-          {formData.user_id && (
-            <div className="p-4 bg-neon-green/10 border border-neon-green/30 rounded-lg">
-              <p className="text-sm text-neon-green">
-                Auto-filled from user purchase: <span className="font-bold">{formData.account_type.toUpperCase()}</span> - <span className="font-bold">${formData.account_size.toLocaleString()}</span>
-              </p>
-            </div>
-          )}
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-semibold mb-2">Account Type *</label>
-              <select
-                value={formData.account_type}
-                onChange={(e) => setFormData({ ...formData, account_type: e.target.value })}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none"
-              >
-                <option value="standard">Standard</option>
-                <option value="rapid">Rapid</option>
-                <option value="scaling">Scaling</option>
-                <option value="professional">Professional</option>
-                <option value="swing">Swing</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold mb-2">Account Size *</label>
-              <select
-                value={formData.account_size}
-                onChange={(e) => {
-                  const size = Number(e.target.value);
-                  setFormData({
-                    ...formData,
-                    account_size: size,
-                    initial_balance: size
-                  });
-                }}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none"
-              >
-                <option value="5000">$5,000</option>
-                <option value="10000">$10,000</option>
-                <option value="25000">$25,000</option>
-                <option value="50000">$50,000</option>
-                <option value="100000">$100,000</option>
-                <option value="200000">$200,000</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold mb-2">Leverage *</label>
-              <select
-                value={formData.leverage}
-                onChange={(e) => setFormData({ ...formData, leverage: Number(e.target.value) })}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none"
-              >
-                <option value="50">1:50</option>
-                <option value="100">1:100</option>
-                <option value="200">1:200</option>
-                <option value="500">1:500</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="flex space-x-4 pt-4">
-            <button
-              type="submit"
-              disabled={creating}
-              className="flex-1 btn-gradient py-3 rounded-lg font-semibold disabled:opacity-50"
-            >
-              {creating ? 'Creating...' : 'Create Account'}
-            </button>
+          <div className="flex justify-end space-x-4 pt-4 border-t border-white/10">
             <button
               type="button"
               onClick={onClose}
-              className="px-8 py-3 bg-white/10 rounded-lg hover:bg-white/20 transition-all"
+              className="px-6 py-3 bg-white/10 rounded-lg hover:bg-white/20"
             >
               Cancel
             </button>
+            <button
+              type="submit"
+              disabled={!selectedChallenge || creating}
+              className="px-6 py-3 bg-gradient-to-r from-neon-green to-electric-blue rounded-lg font-semibold hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              {creating ? 'Assigning...' : 'Assign MT5 Credentials'}
+            </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );
