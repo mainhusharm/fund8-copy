@@ -219,7 +219,6 @@ function OverviewSection({ user }: { user: any }) {
 
       const active = challenges?.filter(c =>
         c.trading_account_id &&
-        (c.credentials_visible || c.credentials_sent) &&
         c.status !== 'pending_payment' &&
         c.status !== 'pending_credentials'
       ).map(c => ({
@@ -234,7 +233,9 @@ function OverviewSection({ user }: { user: any }) {
         current_balance: c.account_size,
         status: c.status,
         created_at: c.purchase_date,
-        challenge_info: c.challenge_type
+        challenge_info: c.challenge_type,
+        credentials_visible: c.credentials_visible || c.credentials_sent || false,
+        contract_signed: c.contract_signed || false
       })) || [];
 
       setPendingChallenges(pending);
@@ -579,7 +580,20 @@ function OverviewSection({ user }: { user: any }) {
             </div>
           )}
 
-          {selectedAccount && (selectedAccount.status === 'credentials_given' || selectedAccount.status === 'active') && selectedAccount.mt5_login && (
+          {selectedAccount && (selectedAccount.status === 'credentials_given' || selectedAccount.status === 'active') && selectedAccount.mt5_login && !selectedAccount.credentials_visible && (
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-8 mb-6 text-center">
+              <Clock size={64} className="mx-auto mb-4 text-yellow-400" />
+              <h3 className="text-2xl font-bold mb-2">Credentials Pending Release</h3>
+              <p className="text-white/70 mb-4">
+                Your MT5 credentials have been assigned but not yet released by admin.
+              </p>
+              <p className="text-sm text-white/50">
+                Please sign your contract or wait for admin to release your credentials.
+              </p>
+            </div>
+          )}
+
+          {selectedAccount && (selectedAccount.status === 'credentials_given' || selectedAccount.status === 'active') && selectedAccount.mt5_login && selectedAccount.credentials_visible && (
             <div className="bg-white/5 rounded-xl p-6 border border-white/10 mb-6">
               <div className="flex items-center justify-between mb-6">
                 <div>

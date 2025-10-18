@@ -218,6 +218,66 @@ export default function CryptoPayment() {
             } catch (certError) {
               console.error('Certificate generation error:', certError);
             }
+
+            // Generate purchase invoice
+            try {
+              const invoiceNumber = `INV-${Date.now()}-${userChallenge.id.slice(0, 8)}`;
+              const { error: invoiceError } = await supabase
+                .from('downloads')
+                .insert({
+                  user_id: user.id,
+                  challenge_id: userChallenge.id,
+                  document_type: 'invoice',
+                  title: 'Purchase Invoice',
+                  description: `Invoice for ${challengeType} challenge purchase`,
+                  document_number: invoiceNumber,
+                  issue_date: new Date().toISOString(),
+                  challenge_type: challengeType,
+                  account_size: accountSize,
+                  amount: finalPrice,
+                  status: 'generated',
+                  auto_generated: true,
+                  generated_at: new Date().toISOString(),
+                  download_count: 0
+                });
+
+              if (invoiceError) {
+                console.error('Failed to generate invoice:', invoiceError);
+              }
+            } catch (invoiceError) {
+              console.error('Invoice generation error:', invoiceError);
+            }
+
+            // Generate payment receipt
+            try {
+              const receiptNumber = `RCPT-${Date.now()}-${userChallenge.id.slice(0, 8)}`;
+              const { error: receiptError } = await supabase
+                .from('downloads')
+                .insert({
+                  user_id: user.id,
+                  challenge_id: userChallenge.id,
+                  document_type: 'receipt',
+                  title: 'Payment Receipt',
+                  description: `Payment receipt for ${challengeType} challenge`,
+                  document_number: receiptNumber,
+                  issue_date: new Date().toISOString(),
+                  challenge_type: challengeType,
+                  account_size: accountSize,
+                  amount: finalPrice,
+                  payment_method: finalPrice > 0 ? `crypto_${selectedCrypto.toLowerCase()}` : 'coupon',
+                  transaction_id: transactionHash || 'FREE_' + Date.now(),
+                  status: 'generated',
+                  auto_generated: true,
+                  generated_at: new Date().toISOString(),
+                  download_count: 0
+                });
+
+              if (receiptError) {
+                console.error('Failed to generate receipt:', receiptError);
+              }
+            } catch (receiptError) {
+              console.error('Receipt generation error:', receiptError);
+            }
           }
         } else {
           console.error('Challenge type not found for code:', challengeType);
