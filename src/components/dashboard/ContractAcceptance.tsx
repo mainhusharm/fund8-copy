@@ -70,62 +70,116 @@ export default function ContractAcceptance({
       </div>
 
       <div className="bg-white/5 rounded-lg p-6 mb-6 border border-white/10 max-h-96 overflow-y-auto">
-        <h4 className="font-bold text-lg mb-4">Fund8r Proprietary Trading Agreement</h4>
+        <h4 className="font-bold text-lg mb-4 text-yellow-400">⚠️ Fund8r Master Service Agreement - LEGALLY BINDING CONTRACT</h4>
+        <p className="text-xs text-yellow-400/80 mb-4">Effective Date: {new Date().toLocaleDateString()} | Last Updated: {new Date().toLocaleDateString()}</p>
 
         <div className="space-y-4 text-sm text-white/80">
-          <section>
-            <h5 className="font-semibold text-white mb-2">1. Challenge Terms</h5>
-            <p>You are entering a ${accountSize.toLocaleString()} {accountType.toUpperCase()} trading challenge with Fund8r. This is a simulated trading environment designed to evaluate your trading skills.</p>
+          <section className="bg-yellow-500/10 border border-yellow-500/30 rounded p-3">
+            <h5 className="font-bold text-yellow-400 mb-2">⚠️ CRITICAL RISK DISCLOSURE</h5>
+            <p className="font-semibold text-white">
+              TRADING INVOLVES SUBSTANTIAL RISK OF LOSS. The Company provides simulated trading environments for evaluation purposes. Past
+              performance is not indicative of future results. Traders should never risk more than they can afford to lose.
+            </p>
           </section>
 
           <section>
-            <h5 className="font-semibold text-white mb-2">2. Trading Rules</h5>
+            <h5 className="font-semibold text-white mb-2">1. Nature of Service</h5>
+            <p>Fund8r ("Company," "we," "us") operates as an evaluation service provider offering simulated trading challenges. This is NOT a live trading account with real funds. All trading is conducted in a demo/simulated environment. No real money is at risk during evaluation phases.</p>
+          </section>
+
+          <section>
+            <h5 className="font-semibold text-white mb-2">2. Challenge Terms & Account Details</h5>
             <ul className="list-disc list-inside space-y-1 ml-2">
-              <li>You must adhere to all challenge rules including profit targets, drawdown limits, and daily loss limits</li>
-              <li>Violation of any trading rule will result in immediate challenge termination</li>
-              <li>All trades must be executed through the provided MT5 account</li>
-              <li>News trading and high-frequency strategies are subject to review</li>
+              <li>Challenge Type: ${accountSize.toLocaleString()} {accountType.toUpperCase()}</li>
+              <li>Platform: MetaTrader 5 (MT5)</li>
+              <li>All trading rules must be strictly followed at all times</li>
+              <li>Violation of ANY rule results in immediate disqualification without refund</li>
+              <li>Challenge fees are NON-REFUNDABLE except as required by applicable law</li>
             </ul>
           </section>
 
           <section>
-            <h5 className="font-semibold text-white mb-2">3. Account Credentials</h5>
+            <h5 className="font-semibold text-white mb-2">3. Trading Rules & Restrictions</h5>
             <ul className="list-disc list-inside space-y-1 ml-2">
-              <li>MT5 credentials will be provided after contract acceptance</li>
-              <li>You are responsible for maintaining the security of your account credentials</li>
-              <li>Sharing credentials is strictly prohibited and will result in termination</li>
-              <li>Credentials are non-transferable and locked after initial delivery</li>
+              <li>Profit targets, maximum daily loss, and maximum total drawdown limits must be observed</li>
+              <li>Minimum trading days requirement must be met before payouts</li>
+              <li>High-frequency trading (HFT), arbitrage, and latency-exploiting strategies are PROHIBITED</li>
+              <li>Account manipulation, hedging across accounts, and copy trading are strictly FORBIDDEN</li>
+              <li>News trading within [specified timeframe] of high-impact events may be restricted</li>
+              <li>Weekend/overnight holding rules must be followed as specified in your challenge type</li>
             </ul>
           </section>
 
           <section>
-            <h5 className="font-semibold text-white mb-2">4. Profit Split & Payouts</h5>
+            <h5 className="font-semibold text-white mb-2">4. Account Security & Credentials</h5>
             <ul className="list-disc list-inside space-y-1 ml-2">
-              <li>Upon successful completion, you will receive your designated profit split percentage</li>
-              <li>Payouts are processed within 24-48 hours of request</li>
-              <li>Minimum payout amount is $100 USD</li>
-              <li>You may request payouts after meeting minimum trading day requirements</li>
+              <li>Login credentials are provided ONCE after contract acceptance and CANNOT be recovered if lost</li>
+              <li>You are SOLELY responsible for maintaining credential security</li>
+              <li>Sharing, selling, or transferring credentials to third parties is STRICTLY PROHIBITED</li>
+              <li>Multiple logins from different IP addresses/locations will be flagged and may result in termination</li>
+              <li>Use of VPNs, proxies, or location-masking services is prohibited without prior written approval</li>
             </ul>
           </section>
 
           <section>
-            <h5 className="font-semibold text-white mb-2">5. Risk Disclosure</h5>
-            <p>Trading in financial markets involves substantial risk of loss. While this is a funded account, you must demonstrate responsible risk management and trading discipline.</p>
+            <h5 className="font-semibold text-white mb-2">5. Payouts & Profit Distribution</h5>
+            <ul className="list-disc list-inside space-y-1 ml-2">
+              <li>Payouts are available ONLY after successfully completing all challenge phases</li>
+              <li>Profit split percentages are as specified in your challenge terms</li>
+              <li>Minimum payout threshold: $100 USD</li>
+              <li>Payout processing: 1-14 business days upon request</li>
+              <li>Company reserves the right to withhold payouts pending compliance review</li>
+              <li>Suspicious trading patterns may delay or void payout eligibility</li>
+            </ul>
           </section>
 
           <section>
-            <h5 className="font-semibold text-white mb-2">6. Data & Privacy</h5>
-            <p>Your trading data and personal information will be handled according to our Privacy Policy. We collect and analyze trading performance data to evaluate challenge progression.</p>
+            <h5 className="font-semibold text-white mb-2">6. Monitoring & Compliance</h5>
+            <p>The Company employs automated and manual monitoring systems to ensure compliance. All trading activity is recorded and analyzed. Company reserves the right to review any trade, pattern, or activity at any time without notice.</p>
           </section>
 
           <section>
             <h5 className="font-semibold text-white mb-2">7. Termination</h5>
-            <p>Fund8r reserves the right to terminate any challenge for rule violations, suspicious activity, or at our sole discretion. No refunds will be issued for terminated challenges due to rule violations.</p>
+            <p>The Company reserves the right to terminate any account that violates trading rules, engages in prohibited practices, or acts in bad faith. Evaluation fees are non-refundable except as required by law.</p>
           </section>
 
           <section>
-            <h5 className="font-semibold text-white mb-2">8. Agreement</h5>
-            <p>By accepting this contract, you acknowledge that you have read, understood, and agree to abide by all terms and conditions outlined in this agreement and on the Fund8r website.</p>
+            <h5 className="font-semibold text-white mb-2">8. Limitation of Liability</h5>
+            <p className="font-semibold text-white">
+              THE COMPANY'S LIABILITY IS LIMITED TO THE EVALUATION FEES PAID BY THE TRADER. THE COMPANY IS NOT LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING FROM THE USE OF ITS SERVICES. TRADER WAIVES ALL CLAIMS BEYOND REFUND OF FEES WHERE APPLICABLE.
+            </p>
+          </section>
+
+          <section>
+            <h5 className="font-semibold text-white mb-2">9. Data & Privacy</h5>
+            <p>The Company collects and processes trading data and personal information in accordance with its Privacy Policy. All trading activity is monitored for compliance and risk management purposes. By accepting this agreement, you consent to data collection and analysis.</p>
+          </section>
+
+          <section>
+            <h5 className="font-semibold text-white mb-2">10. Governing Law & Dispute Resolution</h5>
+            <p>This Agreement is governed by applicable laws. Any disputes shall be resolved through binding arbitration. Trader waives right to participate in class action lawsuits against the Company.</p>
+          </section>
+
+          <section>
+            <h5 className="font-semibold text-white mb-2">11. No Financial Advice</h5>
+            <p>The Company does NOT provide investment advice, financial planning, or trading recommendations. All trading decisions are made independently by the Trader.</p>
+          </section>
+
+          <section>
+            <h5 className="font-semibold text-white mb-2">12. Age & Eligibility</h5>
+            <p>Trader must be at least 18 years old and legally capable of entering contracts. Trader is responsible for compliance with local laws and regulations.</p>
+          </section>
+
+          <section>
+            <h5 className="font-semibold text-white mb-2">13. Modifications</h5>
+            <p>Company may modify terms with 30 days notice. Continued use after modifications constitutes acceptance of new terms.</p>
+          </section>
+
+          <section className="bg-red-500/10 border border-red-500/30 rounded p-3">
+            <h5 className="font-bold text-red-400 mb-2">14. Final Acknowledgment</h5>
+            <p className="font-semibold text-white">
+              BY ACCEPTING THIS CONTRACT, YOU ACKNOWLEDGE: (a) You have READ and UNDERSTOOD all terms; (b) You AGREE to be legally bound; (c) You WAIVE any claims beyond those expressly permitted; (d) You understand this is a SIMULATION for evaluation; (e) You accept ALL RISKS associated with trading.
+            </p>
           </section>
         </div>
       </div>

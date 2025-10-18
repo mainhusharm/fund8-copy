@@ -31,6 +31,7 @@ import ContractAcceptance from '../components/dashboard/ContractAcceptance';
 import AccountStatusBadge from '../components/dashboard/AccountStatusBadge';
 import EnhancedSettings from '../components/dashboard/EnhancedSettings';
 import Analytics3DBackground from '../components/dashboard/Analytics3DBackground';
+import AccountCard from '../components/dashboard/AccountCard';
 
 type Section =
   | 'overview'
@@ -326,22 +327,19 @@ function OverviewSection({ user }: { user: any }) {
 
       {mt5Accounts.length > 0 ? (
         <>
-          {mt5Accounts.length > 1 && (
-            <div className="bg-white/5 rounded-xl p-6 border border-white/10 mb-6">
-              <label className="block text-sm font-semibold mb-3">Select Account ({mt5Accounts.length} Total)</label>
-              <select
-                value={selectedAccountId || ''}
-                onChange={(e) => setSelectedAccountId(e.target.value)}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none text-white"
-              >
-                {mt5Accounts.map(acc => (
-                  <option key={acc.account_id} value={acc.account_id} className="bg-deep-space">
-                    {acc.mt5_login ? `MT5 #${acc.mt5_login}` : 'Pending Setup'} - {acc.account_type.toUpperCase()} - ${parseFloat(acc.account_size).toLocaleString()} - {acc.status}
-                  </option>
-                ))}
-              </select>
+          {/* Accounts Grid */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold mb-4">My Trading Accounts</h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {mt5Accounts.map(acc => (
+                <AccountCard
+                  key={acc.account_id}
+                  account={acc}
+                  onClick={() => setSelectedAccountId(acc.account_id)}
+                />
+              ))}
             </div>
-          )}
+          </div>
 
           {selectedAccount && selectedAccount.status && (
             <div className="mb-6">
@@ -580,23 +578,26 @@ function AnalyticsSection({ user }: { user: any }) {
 
     setLoading(true);
     try {
-      const account = mt5Accounts.find(a => a.id === selectedAccountId);
+      const account = mt5Accounts.find(a => a.account_id === selectedAccountId);
       if (!account) {
         setLoading(false);
         return;
       }
 
+      const accountSize = parseFloat(account.account_size) || 5000;
+      const currentBalance = parseFloat(account.current_balance) || accountSize;
+
       // Display account information from Supabase database
       // Note: For live MT5 data, you need to set up MetaAPI integration via Supabase Edge Function
       setRealTimeData({
-        balance: account.account_size || 0,
-        equity: account.current_balance || account.account_size || 0,
+        balance: accountSize,
+        equity: currentBalance,
         margin: '0.00',
-        freeMargin: (account.account_size * 0.9).toFixed(2),
+        freeMargin: (accountSize * 0.9).toFixed(2),
         marginLevel: '100.00',
         openTrades: 0,
-        profit: '0.00',
-        profitPercentage: '0.00',
+        profit: (currentBalance - accountSize).toFixed(2),
+        profitPercentage: (((currentBalance - accountSize) / accountSize) * 100).toFixed(2),
         totalTrades: 0,
         winRate: '0.00',
         averageWin: '0.00',
@@ -615,7 +616,7 @@ function AnalyticsSection({ user }: { user: any }) {
     }
   }
 
-  const selectedAccount = mt5Accounts.find(a => a.id === selectedAccountId);
+  const selectedAccount = mt5Accounts.find(a => a.account_id === selectedAccountId);
 
   return (
     <div className="relative">
@@ -659,8 +660,8 @@ function AnalyticsSection({ user }: { user: any }) {
                 className="w-full max-w-md px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none"
               >
                 {mt5Accounts.map(acc => (
-                  <option key={acc.id} value={acc.id} className="bg-deep-space">
-                    MT5 #{acc.login} - ${acc.accountSize.toLocaleString()}
+                  <option key={acc.account_id} value={acc.account_id} className="bg-deep-space">
+                    MT5 #{acc.mt5_login} - ${parseFloat(acc.account_size).toLocaleString()}
                   </option>
                 ))}
               </select>

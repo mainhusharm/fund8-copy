@@ -32,18 +32,15 @@ export default function EnhancedSettings({ user }: { user: any }) {
 
   async function fetchUserProfile() {
     try {
-      const { data } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      // Use auth.users metadata instead of users table
+      const { data: { user: authUser } } = await supabase.auth.getUser();
 
-      if (data) {
+      if (authUser && authUser.user_metadata) {
         setProfile({
-          first_name: data.first_name || '',
-          last_name: data.last_name || '',
-          phone: data.phone || '',
-          country: data.country || '',
+          first_name: authUser.user_metadata.first_name || authUser.user_metadata.full_name?.split(' ')[0] || '',
+          last_name: authUser.user_metadata.last_name || authUser.user_metadata.full_name?.split(' ')[1] || '',
+          phone: authUser.user_metadata.phone || '',
+          country: authUser.user_metadata.country || '',
         });
       }
     } catch (err) {
@@ -57,15 +54,15 @@ export default function EnhancedSettings({ user }: { user: any }) {
     setSuccess('');
 
     try {
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({
+      // Update auth user metadata
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: {
           first_name: profile.first_name,
           last_name: profile.last_name,
           phone: profile.phone,
           country: profile.country,
-        })
-        .eq('id', user.id);
+        }
+      });
 
       if (updateError) throw updateError;
 
@@ -289,34 +286,7 @@ export default function EnhancedSettings({ user }: { user: any }) {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold mb-2 text-white/70">Theme</label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => setPreferences({ ...preferences, theme: 'dark' })}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    preferences.theme === 'dark'
-                      ? 'border-electric-blue bg-electric-blue/10'
-                      : 'border-white/10 bg-white/5 hover:border-white/20'
-                  }`}
-                >
-                  <Moon className="w-6 h-6 mx-auto mb-2" />
-                  <div className="text-sm font-semibold">Dark</div>
-                </button>
-                <button
-                  onClick={() => setPreferences({ ...preferences, theme: 'light' })}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    preferences.theme === 'light'
-                      ? 'border-electric-blue bg-electric-blue/10'
-                      : 'border-white/10 bg-white/5 hover:border-white/20'
-                  }`}
-                >
-                  <Sun className="w-6 h-6 mx-auto mb-2" />
-                  <div className="text-sm font-semibold">Light</div>
-                </button>
-              </div>
-              <p className="text-xs text-white/40 mt-2">Light theme coming soon</p>
-            </div>
+            {/* Theme switcher removed - only dark theme available */}
 
             <div>
               <label className="block text-sm font-semibold mb-2 text-white/70">Currency Display</label>
