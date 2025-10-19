@@ -48,7 +48,7 @@ export default function Home() {
               Without Risking Your Own Capital
             </h1>
             <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
-              Pass our 2-phase challenge, prove your skills, and trade with our capital. Keep up to 90% of profits.
+              Pass our 2-phase challenge, prove your skills, and trade with our capital. Keep up to 100% of profits with bi-monthly payouts.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4 mb-16">
               <a href="/signup" className="btn-gradient flex items-center space-x-2 group">
@@ -102,7 +102,7 @@ export default function Home() {
               </div>
               <h3 className="text-2xl font-bold mb-4">Get Funded & Trade</h3>
               <p className="text-gray-400">
-                Keep 80-90% of profits. Withdraw every 14 days via PayPal, Crypto, or Bank.
+                Keep 75-100% of profits based on your payout cycle. Choose from weekly to bi-monthly payouts.
               </p>
             </div>
           </div>
@@ -187,7 +187,7 @@ export default function Home() {
             <FeatureCard
               icon={<DollarSign size={32} className="text-neon-green" />}
               title="Industry-Leading Splits"
-              description="Keep up to 90% of your profits. We only win when you win."
+              description="Keep up to 100% of your profits. Choose your payout frequency and split."
             />
             <FeatureCard
               icon={<RefreshCw size={32} className="text-cyber-purple" />}
@@ -320,7 +320,10 @@ export default function Home() {
                 </div>
                 <div className="pt-4 border-t border-white/10">
                   <div className="font-semibold mb-2">Profit Split</div>
-                  <div className="text-lg">80-90% depending on account size</div>
+                  <div className="text-lg">75-100% based on payout cycle</div>
+                  <div className="text-sm text-gray-400 mt-1">
+                    Bi-Monthly: 100% | Monthly: 95% | Bi-Weekly: 85% | Weekly: 75%
+                  </div>
                 </div>
               </div>
             )}

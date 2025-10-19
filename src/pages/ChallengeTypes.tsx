@@ -343,11 +343,11 @@ export default function ChallengeTypes() {
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle className="text-green-400 mt-0.5 flex-shrink-0" size={20} />
-                    <span>Keep 80-90% of profits (scaling to 90%)</span>
+                    <span>Keep 75-100% of profits based on payout cycle</span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle className="text-green-400 mt-0.5 flex-shrink-0" size={20} />
-                    <span>Bi-weekly payouts</span>
+                    <span>Choose from weekly to bi-monthly payouts</span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle className="text-green-400 mt-0.5 flex-shrink-0" size={20} />

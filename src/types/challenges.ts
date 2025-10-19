@@ -1,3 +1,44 @@
+export type PayoutCycle = 'BI_MONTHLY' | 'MONTHLY' | 'BI_WEEKLY' | 'WEEKLY';
+
+export interface PayoutCycleInfo {
+  cycle: PayoutCycle;
+  label: string;
+  profitSplit: number;
+  frequency: string;
+  description: string;
+}
+
+export const PAYOUT_CYCLES: PayoutCycleInfo[] = [
+  {
+    cycle: 'BI_MONTHLY',
+    label: 'Bi-Monthly',
+    profitSplit: 100,
+    frequency: 'Every 2 months',
+    description: 'Best value - 100% profit split'
+  },
+  {
+    cycle: 'MONTHLY',
+    label: 'Monthly',
+    profitSplit: 95,
+    frequency: 'Every month',
+    description: '95% profit split'
+  },
+  {
+    cycle: 'BI_WEEKLY',
+    label: 'Bi-Weekly',
+    profitSplit: 85,
+    frequency: 'Every 2 weeks',
+    description: '85% profit split'
+  },
+  {
+    cycle: 'WEEKLY',
+    label: 'Weekly',
+    profitSplit: 75,
+    frequency: 'Every week',
+    description: '75% profit split'
+  }
+];
+
 export interface AccountSize {
   size: number;
   pricing: {
@@ -454,4 +495,13 @@ export function getProfitSplit(accountSize: number, challengeType: string): numb
   if (!account) return 80;
 
   return account.profitSplit[challengeType as keyof typeof account.profitSplit] || 80;
+}
+
+export function getProfitSplitForCycle(cycle: PayoutCycle): number {
+  const cycleInfo = PAYOUT_CYCLES.find(c => c.cycle === cycle);
+  return cycleInfo?.profitSplit || 100;
+}
+
+export function getPayoutCycleInfo(cycle: PayoutCycle): PayoutCycleInfo | undefined {
+  return PAYOUT_CYCLES.find(c => c.cycle === cycle);
 }

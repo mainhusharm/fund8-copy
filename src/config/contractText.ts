@@ -13,6 +13,8 @@ export interface ContractData {
   profitTarget: number;
   maxDailyLoss: number;
   maxTotalLoss: number;
+  payoutCycle?: string;
+  profitSplit?: number;
 }
 
 export function generateContractText(data: ContractData): string {
@@ -117,9 +119,14 @@ c) Refunds may be granted for technical issues at Company's sole discretion with
 
 4.3 FUNDED ACCOUNT TERMS
 Upon successful Challenge completion:
-a) Profit split: 80% to Trader, 20% to Company
-b) First payout after 30 days of consistent funded trading
-c) Subsequent payouts every 14 days
+a) Profit split: ${data.profitSplit || 100}% to Trader, ${100 - (data.profitSplit || 100)}% to Company
+b) Payout cycle: ${data.payoutCycle || 'Bi-Monthly'} (${
+  data.payoutCycle === 'BI_MONTHLY' ? 'Every 2 months' :
+  data.payoutCycle === 'MONTHLY' ? 'Every month' :
+  data.payoutCycle === 'BI_WEEKLY' ? 'Every 2 weeks' :
+  data.payoutCycle === 'WEEKLY' ? 'Every week' : 'Every 2 months'
+})
+c) First payout after meeting minimum performance requirements
 d) Minimum payout: $100
 
 ═══════════════════════════════════════════════════════════════════

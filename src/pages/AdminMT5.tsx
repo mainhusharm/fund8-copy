@@ -947,6 +947,12 @@ function CertificateCard({ icon, title, description, userId }: any) {
 }
 
 function CompetitionsTab({ users }: { users: any[] }) {
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const handleCreateCompetition = () => {
+    setShowCreateModal(true);
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
@@ -956,7 +962,10 @@ function CompetitionsTab({ users }: { users: any[] }) {
           </h2>
           <p className="text-white/70">Create and manage trading competitions</p>
         </div>
-        <button className="btn-gradient flex items-center space-x-2">
+        <button
+          onClick={handleCreateCompetition}
+          className="btn-gradient flex items-center space-x-2"
+        >
           <Plus size={20} />
           <span>Create Competition</span>
         </button>
@@ -966,8 +975,94 @@ function CompetitionsTab({ users }: { users: any[] }) {
         <Trophy size={64} className="mx-auto mb-4 text-white/30" />
         <h3 className="text-xl font-bold mb-2">No Competitions Yet</h3>
         <p className="text-white/60 mb-6">Create your first trading competition to engage your traders</p>
-        <button className="btn-gradient">Create First Competition</button>
+        <button
+          onClick={handleCreateCompetition}
+          className="btn-gradient"
+        >
+          Create First Competition
+        </button>
       </div>
+
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <div className="glass-card max-w-2xl w-full p-8 relative">
+            <button
+              onClick={() => setShowCreateModal(false)}
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
+            >
+              <X size={24} />
+            </button>
+
+            <h3 className="text-2xl font-bold mb-6">
+              <GradientText>Create Trading Competition</GradientText>
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Competition Name</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none"
+                  placeholder="e.g., Monthly Trading Championship"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Start Date</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">End Date</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Prize Pool</label>
+                <input
+                  type="number"
+                  className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none"
+                  placeholder="10000"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Description</label>
+                <textarea
+                  rows={4}
+                  className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none resize-none"
+                  placeholder="Enter competition details and rules..."
+                />
+              </div>
+
+              <div className="flex items-center space-x-4 pt-4">
+                <button
+                  onClick={() => {
+                    alert('Competition creation functionality will be implemented with backend integration');
+                    setShowCreateModal(false);
+                  }}
+                  className="flex-1 btn-gradient py-3"
+                >
+                  Create Competition
+                </button>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="flex-1 px-6 py-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

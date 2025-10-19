@@ -58,7 +58,7 @@ export default function PricingCard({
           'Free Phase 2',
           'Unlimited time',
           'All trading styles',
-          'Bi-weekly payouts',
+          'Flexible payout cycles',
           '6% max drawdown',
           'Scale to $200K+',
         ].map((feature, index) => (
