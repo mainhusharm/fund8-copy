@@ -82,7 +82,7 @@ export default function Home() {
               </div>
               <h3 className="text-2xl font-bold mb-4">Choose Your Account</h3>
               <p className="text-gray-400">
-                Select from $5K to $200K account sizes starting at just $49
+                Select from $5K to $200K account sizes starting at just $34
               </p>
             </div>
 
@@ -450,7 +450,7 @@ export default function Home() {
               Your trading career starts here. Choose your challenge size and begin in 60 seconds.
             </p>
             <a href="/signup" className="px-12 py-4 bg-gradient-to-r from-electric-blue to-cyber-purple rounded-lg font-semibold text-lg hover:shadow-lg hover:shadow-electric-blue/50 transition-all inline-flex items-center space-x-2 group">
-              <span>Get Started for $49</span>
+              <span>Get Started for $34</span>
               <ArrowRight className="group-hover:translate-x-1 transition-transform" />
             </a>
             <p className="text-sm text-gray-400 mt-6">
