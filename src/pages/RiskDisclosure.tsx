@@ -18,7 +18,7 @@ export default function RiskDisclosure() {
         <h1 className="text-5xl font-bold mb-4 text-center">
           <GradientText>Risk Disclosure</GradientText>
         </h1>
-        <p className="text-gray-400 mb-12 text-center">Last Updated: January 2024</p>
+        <p className="text-gray-400 mb-12 text-center">Last Updated: October 2025</p>
 
         <div className="glass-card p-8 mb-8 bg-red-500/10 border-red-500/30">
           <h2 className="text-2xl font-bold mb-4 text-red-400">Important Warning</h2>
